@@ -1,0 +1,16 @@
+# Sensitive files
+API keys.md
+*.env
+.env*
+secrets*
+credentials*
+
+# Node.js
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
