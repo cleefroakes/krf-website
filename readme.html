@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kenya Rollball Federation — Official Site</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --red:#C8102E;--gold:#F4A900;--green:#009A4D;
+  --dark:#080808;--dark2:#111;--dark3:#1a1a1a;
+  --gray:#252525;--border:#2e2e2e;--muted:#666;--dim:#999;
+  --white:#fff;--cream:#f5f0e8;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-ui:'Oswald',sans-serif;
+  --font-body:'Inter',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--white);font-family:var(--font-body);overflow-x:hidden}
+img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--dark2)}
+::-webkit-scrollbar-thumb{background:var(--red);border-radius:2px}
+
+/* ─── VIDEO BG ─── */
+#heroBg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#heroBg video{width:100%;height:100%;object-fit:cover;opacity:.18}
+#heroBg .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 20%,rgba(8,8,8,.9) 100%)}
+#heroBg .grain{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
+
+/* ─── NAV ─── */
+#mainNav{position:fixed;top:0;left:0;right:0;z-index:200;transition:background .4s,backdrop-filter .4s}
+#mainNav.scrolled{background:rgba(8,8,8,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--font-display);font-size:1.8rem;letter-spacing:4px;cursor:pointer;display:flex;align-items:center;gap:.5rem}
+.nav-logo .flag{font-size:1.1rem}
+.nav-logo em{color:var(--gold);font-style:normal}
+.nav-links{display:flex;align-items:center;gap:.25rem}
+.nav-btn{background:none;border:none;color:var(--dim);font-family:var(--font-ui);font-size:.75rem;font-weight:500;letter-spacing:1.5px;padding:.5rem 1rem;cursor:pointer;text-transform:uppercase;position:relative;transition:color .2s}
+.nav-btn::after{content:'';position:absolute;bottom:-1px;left:50%;right:50%;height:2px;background:var(--gold);transition:left .25s,right .25s}
+.nav-btn:hover{color:var(--white)}
+.nav-btn.active{color:var(--white)}
+.nav-btn.active::after{left:1rem;right:1rem}
+.nav-portal{background:var(--red);border:none;color:#fff;font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1.5px;padding:.5rem 1.25rem;cursor:pointer;text-transform:uppercase;border-radius:2px;margin-left:.75rem;transition:background .2s}
+.nav-portal:hover{background:#a80024}
+.nav-live{display:flex;align-items:center;gap:.4rem;font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-right:.5rem}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:livepulse 1.2s infinite}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* ─── SECTIONS ─── */
+.page{display:none;position:relative;z-index:10;min-height:100vh;padding-top:64px}
+.page.active{display:block}
+.container{max-width:1280px;margin:0 auto;padding:0 2rem}
+
+/* ─── LANDING SPLIT ─── */
+#landing{display:none}
+#landing.active{display:flex;flex-direction:column;min-height:100vh;padding-top:64px}
+.split-hero{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:4rem 2rem 2rem}
+.split-hero h1{font-family:var(--font-display);font-size:clamp(3rem,8vw,7rem);letter-spacing:6px;line-height:.9;margin-bottom:1rem}
+.split-hero h1 em{color:var(--gold);font-style:normal;display:block}
+.split-hero p{color:var(--dim);font-size:.95rem;max-width:480px;line-height:1.8;margin-bottom:3rem}
+.split-cards{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;width:100%;max-width:900px}
+.split-card{flex:1;min-width:280px;max-width:380px;position:relative;overflow:hidden;border-radius:6px;cursor:pointer;transition:transform .3s}
+.split-card:hover{transform:translateY(-6px)}
+.split-card .sc-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.split-card .sc-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.4) 60%,transparent 100%)}
+.split-card .sc-body{position:relative;padding:2.5rem 1.75rem;min-height:280px;display:flex;flex-direction:column;justify-content:flex-end}
+.split-card h2{font-family:var(--font-display);font-size:2rem;letter-spacing:3px;margin-bottom:.4rem}
+.split-card p{font-size:.82rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:1.25rem}
+.split-card .sc-btn{display:inline-block;background:var(--red);color:#fff;font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1.5px;padding:.55rem 1.25rem;border-radius:2px;text-transform:uppercase;cursor:pointer;transition:background .2s;border:none}
+.split-card.portal .sc-btn{background:var(--gold);color:var(--dark)}
+.split-card:hover .sc-btn{opacity:.85}
+.sc-icon{font-size:2.5rem;margin-bottom:.75rem}
+
+/* ─── HOME ─── */
+.home-hero{position:relative;min-height:calc(100vh - 64px);display:flex;align-items:flex-end;padding-bottom:4rem;overflow:hidden}
+.home-hero-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 2rem;width:100%}
+.home-hero h1{font-family:var(--font-display);font-size:clamp(4rem,10vw,9rem);line-height:.88;letter-spacing:4px;margin-bottom:1.5rem}
+.home-hero h1 .line2{color:var(--gold);display:block}
+.home-hero h1 .line3{color:var(--red);display:block}
+.hero-meta{display:flex;align-items:center;gap:2rem;margin-bottom:2rem;flex-wrap:wrap}
+.hero-stat{border-left:2px solid var(--gold);padding-left:.85rem}
+.hero-stat .val{font-family:var(--font-display);font-size:2rem;color:var(--gold);display:block;line-height:1}
+.hero-stat .lbl{font-size:.65rem;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+.hero-btns{display:flex;gap:.75rem;flex-wrap:wrap}
+.btn-primary{background:var(--red);border:none;color:#fff;font-family:var(--font-ui);font-size:.78rem;font-weight:600;letter-spacing:1.5px;padding:.7rem 1.75rem;cursor:pointer;text-transform:uppercase;border-radius:2px;transition:all .2s}
+.btn-primary:hover{background:#a80024;transform:translateY(-1px)}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--white);font-family:var(--font-ui);font-size:.78rem;font-weight:600;letter-spacing:1.5px;padding:.7rem 1.75rem;cursor:pointer;text-transform:uppercase;border-radius:2px;transition:all .2s}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.scroll-hint{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:.4rem;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+
+/* ─── LIVE TICKER ─── */
+.live-ticker{background:var(--red);padding:.45rem 0;overflow:hidden;position:relative;z-index:10}
+.ticker-inner{display:flex;align-items:center;gap:3rem;animation:ticker 30s linear infinite;white-space:nowrap}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap.75rem}
+.ticker-sep{opacity:.4;margin:0 1rem}
+
+/* ─── SECTION HEADERS ─── */
+.sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;padding-top:3rem}
+.sec-head h2{font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);letter-spacing:3px;line-height:1}
+.sec-head h2 em{color:var(--red);font-style:normal}
+.sec-head h2 small{display:block;font-family:var(--font-body);font-size:.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-weight:400;margin-bottom:.25rem}
+.sec-link{font-family:var(--font-ui);font-size:.72rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:none;border:none;transition:opacity .2s}
+.sec-link:hover{opacity:.7}
+
+/* ─── TOURNAMENT CARDS ─── */
+.tournament-scroll{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
+.t-card{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:16/9;transition:transform .3s,box-shadow .3s}
+.t-card:hover{transform:scale(1.02);box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.t-card-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .4s}
+.t-card:hover .t-card-bg{transform:scale(1.05)}
+.t-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.95) 0%,rgba(0,0,0,.3) 50%,rgba(0,0,0,.1) 100%)}
+.t-card-video{position:absolute;inset:0;opacity:0;transition:opacity .6s;pointer-events:none}
+.t-card-video video{width:100%;height:100%;object-fit:cover}
+.t-card:hover .t-card-video{opacity:1}
+.t-card-body{position:absolute;bottom:0;left:0;right:0;padding:1.25rem 1.5rem}
+.t-status{display:inline-block;font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
+.t-status.live{background:var(--red);color:#fff}
+.t-status.upcoming{background:rgba(244,169,0,.2);color:var(--gold);border:1px solid rgba(244,169,0,.3)}
+.t-status.completed{background:rgba(255,255,255,.1);color:var(--dim)}
+.t-card h3{font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;line-height:1;margin-bottom:.35rem}
+.t-card-meta{display:flex;gap:1rem}
+.t-card-meta span{font-size:.68rem;color:rgba(255,255,255,.5);font-family:var(--font-ui);letter-spacing:.5px}
+.t-play-hint{position:absolute;top:.85rem;right:.85rem;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:.6rem;color:rgba(255,255,255,.6);font-family:var(--font-ui);letter-spacing:1px;text-transform:uppercase;opacity:0;transition:opacity .3s}
+.t-card:hover .t-play-hint{opacity:1}
+
+/* TOURNAMENT DETAIL BG VIDEO */
+#tournamentBg{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .8s}
+#tournamentBg video{width:100%;height:100%;object-fit:cover}
+#tournamentBg .toverlay{position:absolute;inset:0;background:rgba(5,0,10,.82)}
+#tournamentBg.active{opacity:1}
+
+/* ─── TEAMS GRID ─── */
+.teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
+.team-card{background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .25s,border-color .25s}
+.team-card:hover{transform:translateY(-4px);border-color:rgba(244,169,0,.4)}
+.team-card-banner{height:120px;position:relative;overflow:hidden}
+.team-card-banner .team-img{width:100%;height:100%;object-fit:cover;opacity:.6;transition:opacity .3s,transform .3s}
+.team-card:hover .team-card-banner .team-img{opacity:.9;transform:scale(1.06)}
+.team-card-banner .team-color-overlay{position:absolute;inset:0}
+.team-card-badge{position:absolute;bottom:-20px;left:1.25rem;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.1rem;border:3px solid var(--dark2);z-index:2}
+.team-card-body{padding:1.5rem 1.25rem 1.25rem}
+.team-card h3{font-family:var(--font-ui);font-size:1rem;font-weight:700;letter-spacing:.5px;margin-bottom:.2rem}
+.team-card-city{font-size:.72rem;color:var(--muted);margin-bottom:1rem}
+.team-card-stats{display:flex;gap:1.25rem}
+.tcs{text-align:center}
+.tcs .v{font-family:var(--font-display);font-size:1.4rem;color:var(--gold);display:block;line-height:1}
+.tcs .l{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+/* ─── PLAYER MODAL ─── */
+.overlay-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:800;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px)}
+.overlay-bg.open{display:flex}
+.player-modal{background:var(--dark2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;position:relative}
+.pm-banner{height:220px;position:relative;overflow:hidden}
+.pm-banner-img{width:100%;height:100%;object-fit:cover}
+.pm-banner-overlay{position:absolute;inset:0;background:linear-gradient(to top,var(--dark2) 0%,transparent 60%)}
+.pm-close{position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--white);font-size:1rem;transition:background .2s;z-index:5}
+.pm-close:hover{background:var(--red)}
+.pm-body{padding:1.5rem 2rem 2rem}
+.pm-header{display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.5rem}
+.pm-avatar{width:80px;height:80px;border-radius:50%;border:3px solid;object-fit:cover;flex-shrink:0;background:var(--dark3)}
+.pm-avatar-placeholder{width:80px;height:80px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.8rem;flex-shrink:0}
+.pm-name{font-family:var(--font-display);font-size:2rem;letter-spacing:2px;line-height:1;margin-bottom:.25rem}
+.pm-pos{font-size:.75rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem}
+.pm-num{font-family:var(--font-display);font-size:3rem;color:rgba(255,255,255,.08);position:absolute;top:1.5rem;right:2rem;letter-spacing:-2px}
+.pm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem}
+.pm-stat{background:var(--dark3);border-radius:4px;padding:.75rem;text-align:center}
+.pm-stat .v{font-family:var(--font-display);font-size:1.8rem;color:var(--gold);display:block;line-height:1}
+.pm-stat .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.pm-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.pm-info-row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82rem}
+.pm-info-row .k{color:var(--muted)}
+.pm-info-row .v2{font-weight:500}
+
+/* ─── TEAM MODAL ─── */
+.team-modal{background:var(--dark2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:900px;max-height:92vh;overflow-y:auto;position:relative}
+.tm-banner{height:200px;position:relative;overflow:hidden}
+.tm-banner-img{width:100%;height:100%;object-fit:cover;opacity:.5}
+.tm-overlay{position:absolute;inset:0;background:linear-gradient(to top,var(--dark2) 0%,transparent 70%)}
+.tm-head{padding:1.5rem 2rem;display:flex;align-items:center;gap:1.25rem;margin-top:-30px;position:relative;z-index:2}
+.tm-badge-lg{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.5rem;border:3px solid var(--dark2)}
+.tm-name{font-family:var(--font-display);font-size:2.2rem;letter-spacing:3px;line-height:1}
+.tm-city{font-size:.8rem;color:var(--muted);letter-spacing:1px}
+.tm-stats-bar{display:flex;gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.tm-stat{flex:1;padding:.85rem;text-align:center;border-right:1px solid var(--border)}
+.tm-stat:last-child{border-right:none}
+.tm-stat .v{font-family:var(--font-display);font-size:1.6rem;color:var(--gold);display:block;line-height:1}
+.tm-stat .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.tm-body{padding:1.5rem 2rem 2rem}
+.tm-body h4{font-family:var(--font-ui);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+.players-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem}
+.player-chip{background:var(--dark3);border:1px solid var(--border);border-radius:4px;padding:.65rem .75rem;cursor:pointer;transition:border-color .2s,transform .2s;display:flex;align-items:center;gap:.6rem}
+.player-chip:hover{border-color:rgba(244,169,0,.5);transform:translateY(-2px)}
+.pc-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:.75rem;flex-shrink:0}
+.pc-info strong{display:block;font-size:.78rem;font-weight:500}
+.pc-info small{font-size:.65rem;color:var(--muted)}
+
+/* ─── FIXTURES ─── */
+.fixtures-list{display:flex;flex-direction:column;gap:.75rem}
+.fixture-card{background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem;transition:border-color .2s}
+.fixture-card:hover{border-color:rgba(200,16,46,.3)}
+.fc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem}
+.fc-tour{font-family:var(--font-ui);font-size:.65rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.fc-date{font-size:.72rem;color:var(--dim)}
+.fc-main{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.fc-team{flex:1}
+.fc-team.home{text-align:left}
+.fc-team.away{text-align:right}
+.fc-team-name{font-family:var(--font-ui);font-size:1.05rem;font-weight:700;letter-spacing:.3px}
+.fc-team-city{font-size:.68rem;color:var(--muted);margin-top:2px}
+.fc-score-wrap{text-align:center;min-width:100px}
+.fc-score{font-family:var(--font-display);font-size:2.5rem;color:var(--gold);letter-spacing:4px;line-height:1}
+.fc-score.live{color:var(--red);animation:livepulse 1.5s infinite}
+.fc-score.vs{color:var(--dim);font-size:1.2rem;letter-spacing:2px}
+.fc-badge{font-size:.6rem;text-transform:uppercase;letter-spacing:1px;margin-top:.2rem;font-family:var(--font-ui)}
+.fc-badge.live{color:var(--red);font-weight:700}
+.fc-badge.upcoming{color:var(--muted)}
+.fc-badge.completed{color:var(--dim)}
+.fc-countdown{font-size:.7rem;color:var(--gold);font-family:var(--font-ui);letter-spacing:.5px;margin-top:.2rem}
+
+/* ─── STANDINGS TABLE ─── */
+.standings-table{width:100%;border-collapse:collapse}
+.standings-table th{text-align:left;padding:.6rem .85rem;font-family:var(--font-ui);font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
+.standings-table td{padding:.7rem .85rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.85rem}
+.standings-table tr:hover td{background:rgba(255,255,255,.02)}
+.st-rank{font-family:var(--font-display);font-size:1.1rem}
+.st-rank.g{color:var(--gold)}.st-rank.s{color:#c0c0c0}.st-rank.b{color:#cd7f32}
+.st-team{display:flex;align-items:center;gap:.6rem}
+.st-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.fb{display:inline-flex;width:20px;height:20px;border-radius:2px;font-size:.6rem;font-weight:700;align-items:center;justify-content:center;margin-right:2px;font-family:var(--font-ui)}
+.fb.w{background:rgba(39,174,96,.2);color:#27ae60}
+.fb.l{background:rgba(200,16,46,.2);color:var(--red)}
+.fb.d{background:rgba(136,136,136,.15);color:var(--muted)}
+
+/* ─── NEWS ─── */
+.news-grid{display:grid;grid-template-columns:2fr 1fr;gap:1.25rem}
+@media(max-width:768px){.news-grid{grid-template-columns:1fr}}
+.news-featured{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:16/7;cursor:pointer}
+.news-featured-img{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform .4s}
+.news-featured:hover .news-featured-img{transform:scale(1.03)}
+.news-featured-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.2) 60%,transparent 100%)}
+.news-featured-body{position:absolute;bottom:0;left:0;right:0;padding:1.75rem}
+.nf-tag{display:inline-block;background:var(--red);font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;margin-bottom:.6rem}
+.nf-title{font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;line-height:1.05;margin-bottom:.35rem}
+.nf-meta{font-size:.7rem;color:rgba(255,255,255,.5)}
+.news-list{display:flex;flex-direction:column;gap:.6rem}
+.news-item{background:var(--dark2);border:1px solid var(--border);border-radius:4px;padding:.85rem 1rem;cursor:pointer;transition:border-color .2s}
+.news-item:hover{border-color:rgba(244,169,0,.3)}
+.ni-tag{font-family:var(--font-ui);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
+.ni-title{font-size:.85rem;font-weight:500;line-height:1.4;margin-bottom:.25rem}
+.ni-meta{font-size:.68rem;color:var(--muted)}
+
+/* ─── PHOTO GALLERY ─── */
+.gallery-masonry{columns:4;gap:.6rem;column-gap:.6rem}
+@media(max-width:900px){.gallery-masonry{columns:3}}
+@media(max-width:600px){.gallery-masonry{columns:2}}
+.gallery-tile{break-inside:avoid;margin-bottom:.6rem;border-radius:4px;overflow:hidden;cursor:pointer;position:relative}
+.gallery-tile-inner{background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--border);transition:transform .3s}
+.gallery-tile:hover .gallery-tile-inner{transform:scale(1.03)}
+.gallery-tile-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .3s;display:flex;align-items:center;justify-content:center}
+.gallery-tile:hover .gallery-tile-overlay{background:rgba(200,16,46,.2)}
+
+/* ─── SPONSORS ─── */
+.sponsors-section{padding:3rem 0;border-top:1px solid var(--border)}
+.sponsors-label{font-family:var(--font-ui);font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:1.75rem}
+.sponsors-row{display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap}
+.sponsor-logo{background:var(--dark2);border:1px solid var(--border);border-radius:4px;padding:.85rem 2rem;font-family:var(--font-display);font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:border-color .2s,transform .2s}
+.sponsor-logo:hover{border-color:var(--gold);transform:translateY(-2px)}
+.sponsor-logo.title{border-color:rgba(244,169,0,.3);font-size:1.5rem}
+
+/* ─── FOOTER ─── */
+footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2rem 2rem;margin-top:4rem}
+.footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2rem}
+@media(max-width:768px){.footer-inner{grid-template-columns:1fr 1fr}}
+.footer-brand .f-logo{font-family:var(--font-display);font-size:1.6rem;letter-spacing:4px;margin-bottom:.5rem}
+.footer-brand .f-logo span{color:var(--gold)}
+.footer-brand p{font-size:.78rem;color:var(--muted);line-height:1.8;max-width:260px}
+.footer-col h4{font-family:var(--font-ui);font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem}
+.footer-col a{display:block;font-size:.8rem;color:var(--dim);text-decoration:none;margin-bottom:.4rem;transition:color .2s;cursor:pointer}
+.footer-col a:hover{color:var(--gold)}
+.footer-bottom{max-width:1280px;margin:.2rem auto 0;padding-top:1.25rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.footer-bottom p{font-size:.72rem;color:var(--muted)}
+.social-icons{display:flex;gap:.5rem}
+.soc{width:32px;height:32px;background:var(--dark3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.75rem;cursor:pointer;transition:border-color .2s,background .2s}
+.soc:hover{border-color:var(--gold);background:rgba(244,169,0,.08)}
+
+/* ─── TABS ─── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;scrollbar-width:none}
+.tab{background:none;border:none;color:var(--muted);font-family:var(--font-ui);font-size:.72rem;font-weight:600;padding:.65rem 1.1rem;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
+.tab.active{color:var(--white);border-bottom-color:var(--red)}
+.tab:hover:not(.active){color:var(--dim)}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid var(--gold);border-left:3px solid var(--gold);color:var(--white);padding:.8rem 1.3rem;border-radius:4px;font-size:.82rem;z-index:999;transform:translateY(20px);opacity:0;transition:all .35s;pointer-events:none;font-family:var(--font-body)}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .home-hero h1{font-size:3.5rem}
+  .pm-stats{grid-template-columns:repeat(2,1fr)}
+  .footer-inner{grid-template-columns:1fr}
+  .container{padding:0 1rem}
+  .split-cards{flex-direction:column;align-items:center}
+  .tournament-scroll{grid-template-columns:1fr}
+  .teams-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+}
+</style>
+</head>
+<body>
+
+<!-- VIDEO HERO BACKGROUND -->
+<div id="heroBg">
+  <video id="heroBgVideo" autoplay muted loop playsinline>
+    <source src="" type="video/mp4"/>
+  </video>
+  <!-- Animated particle canvas fallback -->
+  <canvas id="particleCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- TOURNAMENT BG OVERLAY -->
+<div id="tournamentBg">
+  <video id="tBgVideo" autoplay muted loop playsinline></video>
+  <div class="toverlay"></div>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="showPage('home')">
+      <span class="flag">🇰🇪</span> KRF <em>KENYA</em>
+    </div>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="showPage('home',this)">Home</button>
+      <button class="nav-btn" onclick="showPage('tournaments',this)">Tournaments</button>
+      <button class="nav-btn" onclick="showPage('fixtures',this)">Fixtures</button>
+      <button class="nav-btn" onclick="showPage('teams',this)">Teams</button>
+      <button class="nav-btn" onclick="showPage('standings',this)">Standings</button>
+      <button class="nav-btn" onclick="showPage('news',this)">News</button>
+      <button class="nav-btn" onclick="showPage('gallery',this)">Gallery</button>
+    </div>
+    <div style="display:flex;align-items:center">
+      <div class="nav-live"><div class="live-dot"></div>Live</div>
+      <button class="nav-portal" onclick="showPage('landing')">Player Portal →</button>
+    </div>
+  </div>
+</nav>
+
+<!-- LIVE TICKER -->
+<div class="live-ticker" style="position:fixed;top:64px;left:0;right:0;z-index:150">
+  <div class="ticker-inner" id="tickerInner"></div>
+</div>
+
+<!-- ═══════════════════ LANDING SPLIT ═══════════════════ -->
+<div id="landing" class="page" style="display:none;padding-top:64px">
+  <div style="min-height:calc(100vh - 64px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center">
+    <div style="margin-bottom:.5rem;font-family:var(--font-ui);font-size:.7rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase">Welcome to</div>
+    <h1 style="font-family:var(--font-display);font-size:clamp(3rem,8vw,6.5rem);letter-spacing:5px;line-height:.9;margin-bottom:.75rem">KENYA<br/><span style="color:var(--gold)">ROLLBALL</span><br/>FEDERATION</h1>
+    <p style="color:var(--muted);font-size:.9rem;max-width:440px;line-height:1.8;margin-bottom:3.5rem">Official home of rollball in Kenya. Where do you want to go?</p>
+    <div class="split-cards">
+      <div class="split-card" onclick="showPage('home')">
+        <div class="sc-bg" style="background:linear-gradient(135deg,#1a0008,#0d0d0d)"></div>
+        <div class="sc-overlay"></div>
+        <div class="sc-body">
+          <div class="sc-icon">🌍</div>
+          <h2>PUBLIC SITE</h2>
+          <p>Fixtures, standings, teams, news, live scores and tournament info. No login required.</p>
+          <span class="sc-btn">View Public Site →</span>
+        </div>
+      </div>
+      <div class="split-card portal" onclick="showToast('Player Portal coming soon — check back!')">
+        <div class="sc-bg" style="background:linear-gradient(135deg,#0a1a00,#0d0d0d)"></div>
+        <div class="sc-overlay"></div>
+        <div class="sc-body">
+          <div class="sc-icon">🔐</div>
+          <h2>PLAYER PORTAL</h2>
+          <p>Login for players, officials and admins. Register, manage scores, view schedules and personal stats.</p>
+          <span class="sc-btn">Enter Portal →</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:2rem;font-size:.72rem;color:var(--muted)">🇰🇪 Kenya Rollball Federation · Est. 2018</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ HOME ═══════════════════ -->
+<div id="home" class="page active" style="padding-top:88px">
+  <div class="home-hero">
+    <div class="home-hero-content">
+      <div style="font-family:var(--font-ui);font-size:.7rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:1rem">🇰🇪 Official Federation</div>
+      <h1 class="home-hero-h1">
+        KENYA<span class="line2">ROLLBALL</span><span class="line3">FEDERATION</span>
+      </h1>
+      <div class="hero-meta">
+        <div class="hero-stat"><span class="val">12</span><span class="lbl">Teams</span></div>
+        <div class="hero-stat"><span class="val">186</span><span class="lbl">Players</span></div>
+        <div class="hero-stat"><span class="val">4</span><span class="lbl">Tournaments</span></div>
+        <div class="hero-stat"><span class="val">58</span><span class="lbl">Matches</span></div>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('fixtures')">View Fixtures</button>
+        <button class="btn-outline" onclick="showPage('standings')">League Table</button>
+        <button class="btn-outline" onclick="showPage('landing')" style="border-color:rgba(244,169,0,.3);color:var(--gold)">Player Portal →</button>
+      </div>
+    </div>
+    <div class="scroll-hint">↓ scroll</div>
+  </div>
+
+  <!-- LIVE MATCH STRIP -->
+  <div style="background:rgba(200,16,46,.08);border-top:1px solid rgba(200,16,46,.2);border-bottom:1px solid rgba(200,16,46,.2);padding:.85rem 0">
+    <div class="container">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div style="display:flex;align-items:center;gap.5rem">
+          <div class="nav-live" style="margin-right:.75rem"><div class="live-dot"></div>Live Now</div>
+          <span style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">KPL Championship · Round 9 · Q3</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:2rem">
+          <span style="font-family:var(--font-ui);font-size:.95rem;font-weight:700">Nairobi Bulls</span>
+          <span id="liveScoreBig" style="font-family:var(--font-display);font-size:2rem;color:var(--gold);letter-spacing:3px">7 — 5</span>
+          <span style="font-family:var(--font-ui);font-size:.95rem;font-weight:700">Mombasa Sharks</span>
+        </div>
+        <button class="btn-primary" style="font-size:.68rem;padding:.45rem 1rem" onclick="showPage('fixtures')">Full Scorecard →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- FEATURED TOURNAMENTS -->
+    <div class="sec-head">
+      <h2><small>Currently Active</small>FEATURED <em>TOURNAMENTS</em></h2>
+      <button class="sec-link" onclick="showPage('tournaments')">All Tournaments →</button>
+    </div>
+    <div class="tournament-scroll" id="homeTournaments"></div>
+
+    <!-- TOP STANDINGS -->
+    <div class="sec-head">
+      <h2><small>KPL Championship 2025</small>LEAGUE <em>TABLE</em></h2>
+      <button class="sec-link" onclick="showPage('standings')">Full Table →</button>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem">
+      <table class="standings-table" id="homeStandings"></table>
+    </div>
+
+    <!-- LATEST NEWS -->
+    <div class="sec-head">
+      <h2><small>Federation</small>LATEST <em>NEWS</em></h2>
+      <button class="sec-link" onclick="showPage('news')">All News →</button>
+    </div>
+    <div class="news-grid" id="homeNews"></div>
+
+    <!-- SPONSORS -->
+    <div class="sponsors-section">
+      <div class="sponsors-label">Our Partners & Sponsors</div>
+      <div class="sponsors-row" id="homeSponsors"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TOURNAMENTS ═══════════════════ -->
+<div id="tournaments" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>All Competitions</small>TOURNAMENTS & <em>LEAGUES</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterTournaments('all',this)">All</button>
+      <button class="tab" onclick="filterTournaments('ongoing',this)">Ongoing</button>
+      <button class="tab" onclick="filterTournaments('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterTournaments('completed',this)">Completed</button>
+    </div>
+    <div class="tournament-scroll" id="allTournaments"></div>
+
+    <!-- Tournament Detail Panel -->
+    <div id="tournamentDetail" style="display:none;margin-top:2rem">
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:2rem" id="tournamentDetailBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FIXTURES ═══════════════════ -->
+<div id="fixtures" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>All Matches</small>FIXTURES & <em>RESULTS</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterFixtures('all',this)">All</button>
+      <button class="tab" onclick="filterFixtures('live',this)">● Live</button>
+      <button class="tab" onclick="filterFixtures('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterFixtures('completed',this)">Results</button>
+    </div>
+    <div class="fixtures-list" id="fixturesList"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TEAMS ═══════════════════ -->
+<div id="teams" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>KPL 2025</small>ALL <em>TEAMS</em></h2>
+    </div>
+    <div class="teams-grid" id="teamsGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ STANDINGS ═══════════════════ -->
+<div id="standings" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>Season 2025</small>LEAGUE <em>STANDINGS</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterStandings('kpl',this)">KPL Championship</button>
+      <button class="tab" onclick="filterStandings('cup',this)">KRF Cup</button>
+      <button class="tab" onclick="filterStandings('u23',this)">U-23 League</button>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <table class="standings-table"><thead><tr>
+        <th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Form</th>
+      </tr></thead><tbody id="standingsBody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ NEWS ═══════════════════ -->
+<div id="news" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head"><h2><small>Federation</small>NEWS & <em>ANNOUNCEMENTS</em></h2></div>
+    <div id="newsGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ GALLERY ═══════════════════ -->
+<div id="gallery" class="page" style="padding-top:88px">
+  <div class="container">
+    <div class="sec-head"><h2><small>Match Day</small>PHOTO <em>GALLERY</em></h2></div>
+    <div class="gallery-masonry" id="galleryGrid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ TEAM MODAL ═══════════════════ -->
+<div class="overlay-bg" id="teamModal">
+  <div class="team-modal" id="teamModalBody"></div>
+</div>
+
+<!-- ═══════════════════ PLAYER MODAL ═══════════════════ -->
+<div class="overlay-bg" id="playerModal">
+  <div class="player-modal" id="playerModalBody"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="f-logo">KRF <span>KENYA</span></div>
+      <p>The official governing body for Rollball in Kenya, promoting the sport from grassroots to elite level across all 47 counties.</p>
+      <div style="margin-top:1rem;font-size:.72rem;color:var(--muted)">info@krfkenya.co.ke · +254 700 000 000</div>
+    </div>
+    <div class="footer-col">
+      <h4>Competition</h4>
+      <a onclick="showPage('tournaments')">Tournaments</a>
+      <a onclick="showPage('fixtures')">Fixtures</a>
+      <a onclick="showPage('standings')">Standings</a>
+      <a onclick="showPage('teams')">Teams</a>
+    </div>
+    <div class="footer-col">
+      <h4>Media</h4>
+      <a onclick="showPage('news')">News</a>
+      <a onclick="showPage('gallery')">Gallery</a>
+      <a onclick="showToast('YouTube channel coming soon')">Videos</a>
+      <a onclick="showToast('Press releases')">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4>Federation</h4>
+      <a onclick="showPage('landing')">Player Portal</a>
+      <a onclick="showToast('About KRF')">About KRF</a>
+      <a onclick="showToast('Contact form')">Contact</a>
+      <a onclick="showToast('Become a sponsor')">Sponsors</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 Kenya Rollball Federation. All rights reserved.</p>
+    <div class="social-icons">
+      <div class="soc" onclick="showToast('Facebook')">f</div>
+      <div class="soc" onclick="showToast('Twitter/X')">✕</div>
+      <div class="soc" onclick="showToast('Instagram')">◎</div>
+      <div class="soc" onclick="showToast('YouTube')">▶</div>
+      <div class="soc" onclick="showToast('TikTok')">♪</div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════
+const TEAMS = [
+  {id:1,name:'Nairobi Bulls',abbr:'NB',city:'Nairobi',color:'#C8102E',bg:'#1a0008',w:7,d:1,l:0,gf:54,ga:28,
+   bio:'Nairobi\'s premier rollball club, three-time league champions.',
+   players:[{name:'Kevin Ochieng',pos:'Forward',num:7,goals:18,assists:5,gp:8},{name:'Patrick Karuri',pos:'Midfielder',num:10,goals:14,assists:9,gp:8},{name:'Brian Otieno',pos:'Defender',num:3,goals:2,assists:3,gp:7},{name:'James Mutua',pos:'Goalkeeper',num:1,goals:0,assists:0,gp:8},{name:'Peter Kamau',pos:'Forward',num:9,goals:11,assists:4,gp:7},{name:'Simon Kimani',pos:'Midfielder',num:8,goals:6,assists:8,gp:8}]},
+  {id:2,name:'Mombasa Sharks',abbr:'MS',city:'Mombasa',color:'#0057A8',bg:'#00061a',w:6,d:2,l:0,gf:48,ga:31,
+   bio:'The coastal powerhouse, known for their fast attacking play.',
+   players:[{name:'Amina Hassan',pos:'Forward',num:11,goals:16,assists:6,gp:8},{name:'Daniel Mwamba',pos:'Midfielder',num:6,goals:8,assists:12,gp:8},{name:'Rose Achieng',pos:'Forward',num:9,goals:13,assists:3,gp:7},{name:'Sarah Omondi',pos:'Defender',num:4,goals:1,assists:2,gp:8},{name:'Collins Kibet',pos:'Midfielder',num:5,goals:7,assists:7,gp:6}]},
+  {id:3,name:'Kisumu Kings',abbr:'KK',city:'Kisumu',color:'#009A4D',bg:'#001a0c',w:6,d:0,l:2,gf:45,ga:36,
+   bio:'Western Kenya\'s finest, rising through the ranks since 2021.',
+   players:[{name:'Victor Ongala',pos:'Forward',num:7,goals:15,assists:4,gp:8},{name:'Joy Adhiambo',pos:'Midfielder',num:8,goals:9,assists:11,gp:7},{name:'Mark Waweru',pos:'Defender',num:2,goals:0,assists:1,gp:8},{name:'Eric Mugo',pos:'Forward',num:10,goals:12,assists:5,gp:8}]},
+  {id:4,name:'Eldoret Eagles',abbr:'EE',city:'Eldoret',color:'#F4A900',bg:'#1a1000',w:4,d:3,l:1,gf:38,ga:30,
+   bio:'Rift Valley champions, famed for their physical and disciplined play.',
+   players:[{name:'Samuel Kiprotich',pos:'Forward',num:9,goals:14,assists:3,gp:7},{name:'Vivian Chebet',pos:'Midfielder',num:6,goals:7,assists:9,gp:8},{name:'Moses Bartoo',pos:'Defender',num:5,goals:1,assists:2,gp:7}]},
+  {id:5,name:'Nakuru Riders',abbr:'NR',city:'Nakuru',color:'#7B2FBE',bg:'#0e001a',w:4,d:1,l:3,gf:34,ga:38,
+   bio:'The Purple Army — unpredictable and entertaining to watch.',
+   players:[{name:'Alice Nyambura',pos:'Forward',num:10,goals:11,assists:5,gp:8},{name:'Dennis Korir',pos:'Midfielder',num:7,goals:8,assists:8,gp:7}]},
+  {id:6,name:'Thika Thunder',abbr:'TT',city:'Thika',color:'#E85D04',bg:'#1a0600',w:3,d:2,l:3,gf:29,ga:34,
+   bio:'Mid-table contenders with a passionate fanbase.',
+   players:[{name:'Susan Njeri',pos:'Forward',num:9,goals:10,assists:4,gp:7},{name:'Frank Omolo',pos:'Midfielder',num:6,goals:6,assists:6,gp:8}]},
+  {id:7,name:'Nyeri Hawks',abbr:'NH',city:'Nyeri',color:'#03A9F4',bg:'#00101a',w:3,d:1,l:4,gf:27,ga:38,
+   bio:'Mt. Kenya region representatives with talented youth players.',
+   players:[{name:'Claire Wangui',pos:'Forward',num:11,goals:9,assists:3,gp:6}]},
+  {id:8,name:'Garissa Falcons',abbr:'GF',city:'Garissa',color:'#FF6B35',bg:'#1a0800',w:2,d:2,l:4,gf:24,ga:40,
+   bio:'Northern Kenya\'s ambassadors to the national league.',
+   players:[{name:'Chris Mutisya',pos:'Forward',num:7,goals:8,assists:4,gp:7}]},
+  {id:9,name:'Kakamega Lions',abbr:'KL',city:'Kakamega',color:'#4CAF50',bg:'#001a02',w:2,d:1,l:5,gf:20,ga:44,
+   bio:'The Lions of the West — finding their feet in the top tier.',
+   players:[{name:'Lilian Atieno',pos:'Midfielder',num:8,goals:5,assists:7,gp:7}]},
+  {id:10,name:'Machakos Storm',abbr:'NS',city:'Machakos',color:'#9E9E9E',bg:'#111',w:1,d:2,l:5,gf:18,ga:45,
+   bio:'Battling for survival — the Storm never gives up.',
+   players:[{name:'Janet Chepkoech',pos:'Forward',num:9,goals:7,assists:2,gp:6}]},
+  {id:11,name:'Embu Blazers',abbr:'EB',city:'Embu',color:'#FF4081',bg:'#1a0010',w:1,d:1,l:6,gf:15,ga:50,
+   bio:'Young squad with ambition — next season\'s dark horse.',
+   players:[{name:'Henry Odinga',pos:'Midfielder',num:10,goals:4,assists:5,gp:7}]},
+  {id:12,name:'Bungoma United',abbr:'BU',city:'Bungoma',color:'#00BCD4',bg:'#001a1a',w:0,d:2,l:6,gf:12,ga:48,
+   bio:'First season in the KPL — building for the future.',
+   players:[{name:'Alice Mburu',pos:'Forward',num:11,goals:5,assists:1,gp:6}]},
+];
+
+const TOURNAMENTS = [
+  {id:'kpl',name:'KPL Championship 2025',status:'ongoing',start:'Jan 2025',end:'Apr 2025',venue:'Nairobi',teams:12,rounds:11,desc:'The premier rollball league in Kenya featuring all 12 top-tier clubs competing for the championship title.',videoSrc:'',gradient:'linear-gradient(135deg,#1a0008 0%,#2a0010 100%)'},
+  {id:'cup',name:'KRF National Cup',status:'ongoing',start:'Jan 2025',end:'Mar 2025',venue:'Multiple',teams:16,rounds:5,desc:'Open cup competition featuring top-tier and lower league clubs. Giant-killings guaranteed.',videoSrc:'',gradient:'linear-gradient(135deg,#00061a 0%,#001030 100%)'},
+  {id:'u23',name:'U-23 National League',status:'upcoming',start:'Mar 2025',end:'Jun 2025',venue:'Kisumu',teams:8,rounds:7,desc:'Developing the next generation of Kenyan rollball talent. Future stars compete here.',videoSrc:'',gradient:'linear-gradient(135deg,#001a0c 0%,#003020 100%)'},
+  {id:'kpl24',name:'KPL Championship 2024',status:'completed',start:'Jan 2024',end:'Oct 2024',venue:'Nairobi',teams:12,rounds:11,desc:'Nairobi Bulls claimed their third consecutive title in a dramatic final day showdown.',videoSrc:'',gradient:'linear-gradient(135deg,#1a0e00 0%,#2a1800 100%)'},
+];
+
+const MATCHES = [
+  {home:'Nairobi Bulls',homeColor:'#C8102E',away:'Mombasa Sharks',awayColor:'#0057A8',hs:7,as:5,status:'live',date:'Today',time:'15:00',tour:'KPL Championship',venue:'Nyayo Stadium'},
+  {home:'Kisumu Kings',homeColor:'#009A4D',away:'Eldoret Eagles',awayColor:'#F4A900',hs:4,as:3,status:'completed',date:'Sat 1 Feb',time:'15:00',tour:'KPL Championship',venue:'Kisumu Stadium'},
+  {home:'Nakuru Riders',homeColor:'#7B2FBE',away:'Thika Thunder',awayColor:'#E85D04',hs:6,as:4,status:'completed',date:'Sat 1 Feb',time:'11:00',tour:'KPL Championship',venue:'Nakuru ASK'},
+  {home:'Nyeri Hawks',homeColor:'#03A9F4',away:'Garissa Falcons',awayColor:'#FF6B35',hs:3,as:5,status:'completed',date:'Fri 31 Jan',time:'15:00',tour:'KRF Cup',venue:'Nyeri Stadium'},
+  {home:'Kisumu Kings',homeColor:'#009A4D',away:'Thika Thunder',awayColor:'#E85D04',hs:0,as:0,status:'upcoming',date:'Sat 8 Feb',time:'15:00',tour:'KPL Championship',venue:'Kisumu Stadium'},
+  {home:'Nakuru Riders',homeColor:'#7B2FBE',away:'Bungoma United',awayColor:'#00BCD4',hs:0,as:0,status:'upcoming',date:'Sun 9 Feb',time:'11:00',tour:'KRF Cup',venue:'Nakuru ASK'},
+  {home:'Embu Blazers',homeColor:'#FF4081',away:'Machakos Storm',awayColor:'#9E9E9E',hs:0,as:0,status:'upcoming',date:'Sun 9 Feb',time:'14:00',tour:'KPL Championship',venue:'Embu Stadium'},
+  {home:'Kakamega Lions',homeColor:'#4CAF50',away:'Bungoma United',awayColor:'#00BCD4',hs:5,as:2,status:'completed',date:'Thu 30 Jan',time:'16:00',tour:'KRF Cup',venue:'Kakamega Stadium'},
+];
+
+const NEWS = [
+  {tag:'Match Report',title:'Nairobi Bulls extend unbeaten run to 8 games',date:'Apr 4, 2026',featured:true,color:'#C8102E'},
+  {tag:'Tournament',title:'KRF Cup Round of 16 draw announced',date:'Apr 3, 2026',featured:false},
+  {tag:'Player News',title:'Kevin Ochieng named Player of the Month',date:'Apr 2, 2026',featured:false},
+  {tag:'Federation',title:'U-23 National League registration now open',date:'Apr 1, 2026',featured:false},
+  {tag:'International',title:'KRF confirms participation in East Africa Championships',date:'Mar 30, 2026',featured:false},
+  {tag:'Venue',title:'Nyayo Stadium upgrades complete ahead of finals',date:'Mar 28, 2026',featured:false},
+];
+
+const SPONSORS = [
+  {name:'SAFARICOM',tier:'title'},{name:'KCB BANK',tier:'gold'},{name:'KENYA AIRWAYS',tier:'gold'},
+  {name:'TUSKER',tier:'silver'},{name:'BETIKA',tier:'silver'},{name:'EQUITY',tier:'silver'},
+];
+
+const FORMS=[['W','W','W','D','W'],['W','W','D','W','W'],['W','L','W','W','D'],['D','W','D','W','L'],
+  ['W','L','D','L','W'],['L','W','L','W','D'],['L','D','W','L','L'],['L','L','D','W','L'],
+  ['L','L','L','D','W'],['D','L','L','L','L'],['L','L','D','L','L'],['L','L','L','L','D']];
+
+const GALLERY_EMOJIS=['⚽','🏆','👟','🎽','🏃','💪','🤝','🔥','🌟','⚡','🎯','🏅','🤾','🥊','🎪','🙌','👊','🎉','🏟️','🇰🇪'];
+
+// ════════════════════════════════════════════════
+// PARTICLES (hero bg fallback)
+// ════════════════════════════════════════════════
+function initParticles(){
+  const canvas=document.getElementById('particleCanvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[];
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  for(let i=0;i<60;i++) particles.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+.3,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,o:Math.random()*.3+.05,c:Math.random()>.7?'200,16,46':'244,169,0'});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.c},${p.o})`;ctx.fill();
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+    });
+    // Draw faint lines between close particles
+    for(let i=0;i<particles.length;i++) for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<100){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=`rgba(200,16,46,${.04*(1-d/100)})`;ctx.lineWidth=.5;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ════════════════════════════════════════════════
+// NAV SCROLL
+// ════════════════════════════════════════════════
+window.addEventListener('scroll',()=>{
+  document.getElementById('mainNav').classList.toggle('scrolled',window.scrollY>20);
+});
+
+// ════════════════════════════════════════════════
+// PAGE ROUTING
+// ════════════════════════════════════════════════
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>{p.style.display='none';p.classList.remove('active')});
+  document.getElementById('landing').style.display='none';
+  const el=document.getElementById(id);
+  if(el){el.style.display='block';el.classList.add('active');}
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  window.scrollTo(0,0);
+  // Deactivate tournament bg when leaving tournaments
+  if(id!=='tournaments') deactivateTournamentBg();
+  renderPage(id);
+}
+
+function renderPage(id){
+  const renders={home:renderHome,tournaments:renderTournaments,fixtures:renderFixtures,
+    teams:renderTeams,standings:renderStandings,news:renderNews,gallery:renderGallery};
+  renders[id]?.();
+}
+
+// ════════════════════════════════════════════════
+// TICKER
+// ════════════════════════════════════════════════
+function initTicker(){
+  const items=['● LIVE: Nairobi Bulls 7 — 5 Mombasa Sharks · Q3','Kisumu Kings 4 — 3 Eldoret Eagles · Completed','Next: Kisumu Kings vs Thika Thunder · Sat 8 Feb · 15:00','KPL Standings: Nairobi Bulls lead on 22pts','Kevin Ochieng — Player of the Month · 18 goals','KRF Cup Round of 16 draw announced'];
+  const doubled=[...items,...items];
+  document.getElementById('tickerInner').innerHTML=doubled.map(t=>`<span class="ticker-item">${t}<span class="ticker-sep">|</span></span>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// HOME
+// ════════════════════════════════════════════════
+function renderHome(){
+  // Tournaments
+  document.getElementById('homeTournaments').innerHTML=TOURNAMENTS.filter(t=>t.status==='ongoing').map(t=>tournamentCardHTML(t)).join('');
+  // Standings (top 5)
+  const sorted=[...TEAMS].sort((a,b)=>(b.w*3+b.d)-(a.w*3+a.d)).slice(0,5);
+  document.getElementById('homeStandings').innerHTML=`<thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${sorted.map((t,i)=>standingRowHTML(t,i,true)).join('')}</tbody>`;
+  // News
+  const feat=NEWS[0],rest=NEWS.slice(1,5);
+  document.getElementById('homeNews').innerHTML=`
+    <div class="news-featured" onclick="showToast('Opening: ${feat.title}')">
+      <div class="news-featured-img" style="background:linear-gradient(135deg,${feat.color||'#C8102E'},#0d0d0d)"></div>
+      <div class="news-featured-overlay"></div>
+      <div class="news-featured-body">
+        <span class="nf-tag">${feat.tag}</span>
+        <div class="nf-title">${feat.title}</div>
+        <div class="nf-meta">${feat.date}</div>
+      </div>
+    </div>
+    <div class="news-list">${rest.map(n=>`
+      <div class="news-item" onclick="showToast('Opening: ${n.title}')">
+        <div class="ni-tag">${n.tag}</div>
+        <div class="ni-title">${n.title}</div>
+        <div class="ni-meta">${n.date}</div>
+      </div>`).join('')}
+    </div>`;
+  // Sponsors
+  document.getElementById('homeSponsors').innerHTML=SPONSORS.map(s=>`<div class="sponsor-logo ${s.tier}" onclick="showToast('Sponsor: ${s.name}')">${s.name}</div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// TOURNAMENTS
+// ════════════════════════════════════════════════
+function tournamentCardHTML(t){
+  return `<div class="t-card" onclick="openTournament('${t.id}')">
+    <div class="t-card-bg" style="background:${t.gradient}"></div>
+    <div class="t-card-video"><video autoplay muted loop playsinline><source src="${t.videoSrc}" type="video/mp4"/></video></div>
+    <div class="t-card-overlay"></div>
+    <div class="t-play-hint">▶ Hover for trailer</div>
+    <div class="t-card-body">
+      <span class="t-status ${t.status}">${t.status==='ongoing'?'● Live':t.status==='upcoming'?'Upcoming':'Completed'}</span>
+      <h3>${t.name}</h3>
+      <div class="t-card-meta">
+        <span>${t.teams} Teams</span>
+        <span>${t.venue}</span>
+        <span>${t.start} — ${t.end}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+let filterTournamentCurrent='all';
+function renderTournaments(){
+  const list=filterTournamentCurrent==='all'?TOURNAMENTS:TOURNAMENTS.filter(t=>t.status===filterTournamentCurrent);
+  document.getElementById('allTournaments').innerHTML=list.map(t=>tournamentCardHTML(t)).join('');
+}
+function filterTournaments(f,btn){
+  filterTournamentCurrent=f;
+  document.querySelectorAll('#tournaments .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTournaments();
+}
+
+function openTournament(id){
+  const t=TOURNAMENTS.find(x=>x.id===id);
+  if(!t)return;
+  // Switch bg video
+  activateTournamentBg(t);
+  const detail=document.getElementById('tournamentDetail');
+  detail.style.display='block';
+  const team_list=TEAMS.slice(0,t.teams).map(team=>`
+    <span style="background:${team.color}22;border:1px solid ${team.color}44;color:${team.color};font-size:.7rem;padding:3px 10px;border-radius:2px;font-family:var(--font-ui);letter-spacing:.5px;cursor:pointer" onclick="openTeamModal(${team.id})">${team.name}</span>`).join('');
+  document.getElementById('tournamentDetailBody').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+      <div>
+        <span class="t-status ${t.status}" style="margin-bottom:.5rem;display:inline-block">${t.status}</span>
+        <h2 style="font-family:var(--font-display);font-size:2rem;letter-spacing:2px">${t.name}</h2>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:.4rem;max-width:500px;line-height:1.7">${t.desc}</p>
+      </div>
+      <div style="display:flex;gap:1.5rem">
+        <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--gold)">${t.teams}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Teams</div></div>
+        <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--gold)">${t.rounds}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Rounds</div></div>
+        <div style="text-align:center"><div style="font-family:var(--font-display);font-size:1.8rem;color:var(--gold)">${t.venue}</div><div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Venue</div></div>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem;font-family:var(--font-ui);font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted)">Participating Teams</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem">${team_list}</div>
+    <div style="margin-top:1.25rem;padding:.75rem;background:rgba(244,169,0,.06);border:1px solid rgba(244,169,0,.15);border-radius:4px;font-size:.78rem;color:rgba(244,169,0,.8)">
+      🎬 Admin can attach a tournament trailer video — it will play as the background when visitors hover or click this tournament.
+    </div>`;
+  detail.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function activateTournamentBg(t){
+  const bg=document.getElementById('tournamentBg');
+  const vid=document.getElementById('tBgVideo');
+  if(t.videoSrc){vid.src=t.videoSrc;vid.load();}
+  bg.classList.add('active');
+  bg.style.background=t.gradient;
+}
+function deactivateTournamentBg(){
+  document.getElementById('tournamentBg').classList.remove('active');
+}
+
+// ════════════════════════════════════════════════
+// FIXTURES
+// ════════════════════════════════════════════════
+let fixFilter='all';
+function renderFixtures(){
+  const list=fixFilter==='all'?MATCHES:MATCHES.filter(m=>m.status===fixFilter);
+  document.getElementById('fixturesList').innerHTML=list.map(m=>{
+    const isLive=m.status==='live',isUp=m.status==='upcoming';
+    return `<div class="fixture-card">
+      <div class="fc-top"><span class="fc-tour">${m.tour} · ${m.venue}</span><span class="fc-date">${m.date} ${m.time}</span></div>
+      <div class="fc-main">
+        <div class="fc-team home">
+          <div class="fc-team-name" style="color:${m.homeColor}">${m.home}</div>
+        </div>
+        <div class="fc-score-wrap">
+          <div class="fc-score ${isLive?'live':isUp?'vs':''}">${isUp?'VS':`${m.hs} — ${m.as}`}</div>
+          <div class="fc-badge ${m.status}">${isLive?'● LIVE':isUp?'Upcoming':m.status}</div>
+        </div>
+        <div class="fc-team away">
+          <div class="fc-team-name" style="color:${m.awayColor}">${m.away}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterFixtures(f,btn){
+  fixFilter=f;
+  document.querySelectorAll('#fixtures .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFixtures();
+}
+
+// ════════════════════════════════════════════════
+// TEAMS
+// ════════════════════════════════════════════════
+function renderTeams(){
+  document.getElementById('teamsGrid').innerHTML=TEAMS.map(t=>{
+    const pts=t.w*3+t.d,p=t.w+t.d+t.l;
+    return `<div class="team-card" onclick="openTeamModal(${t.id})">
+      <div class="team-card-banner">
+        <div class="team-card-banner" style="background:${t.bg};height:120px;position:relative">
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.15;font-family:var(--font-display);font-size:5rem;letter-spacing:-2px;color:${t.color}">${t.abbr}</div>
+        </div>
+        <div class="team-card-badge" style="background:${t.color}22;color:${t.color};border-color:${t.color}44;bottom:-18px">${t.abbr}</div>
+      </div>
+      <div class="team-card-body">
+        <h3>${t.name}</h3>
+        <div class="team-card-city">📍 ${t.city}</div>
+        <div class="team-card-stats">
+          <div class="tcs"><span class="v">${p}</span><span class="l">Played</span></div>
+          <div class="tcs"><span class="v">${t.w}</span><span class="l">Wins</span></div>
+          <div class="tcs"><span class="v" style="color:var(--white)">${pts}</span><span class="l">Points</span></div>
+          <div class="tcs"><span class="v">${t.players.length}</span><span class="l">Players</span></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openTeamModal(id){
+  const t=TEAMS.find(x=>x.id===id);if(!t)return;
+  const pts=t.w*3+t.d,p=t.w+t.d+t.l,gd=t.gf-t.ga;
+  document.getElementById('teamModalBody').innerHTML=`
+    <div class="tm-banner" style="background:${t.bg}">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.12;font-family:var(--font-display);font-size:8rem;color:${t.color}">${t.abbr}</div>
+      <div class="tm-overlay"></div>
+    </div>
+    <button class="pm-close" onclick="closeModals()" style="position:absolute;top:1rem;right:1rem">✕</button>
+    <div class="tm-head">
+      <div class="tm-badge-lg" style="background:${t.color}22;color:${t.color};border-color:${t.color}55">${t.abbr}</div>
+      <div><div class="tm-name">${t.name}</div><div class="tm-city">📍 ${t.city}</div></div>
+    </div>
+    <div class="tm-stats-bar">
+      <div class="tm-stat"><span class="v">${p}</span><span class="l">Played</span></div>
+      <div class="tm-stat"><span class="v">${t.w}</span><span class="l">Won</span></div>
+      <div class="tm-stat"><span class="v">${t.d}</span><span class="l">Drawn</span></div>
+      <div class="tm-stat"><span class="v">${t.l}</span><span class="l">Lost</span></div>
+      <div class="tm-stat"><span class="v">${t.gf}</span><span class="l">Goals For</span></div>
+      <div class="tm-stat"><span class="v" style="color:${gd>=0?'var(--gold)':'var(--red)'}">${gd>0?'+':''}${gd}</span><span class="l">Goal Diff</span></div>
+      <div class="tm-stat"><span class="v">${pts}</span><span class="l">Points</span></div>
+    </div>
+    <div class="tm-body">
+      <p style="font-size:.84rem;color:var(--dim);line-height:1.7;margin-bottom:1.5rem">${t.bio}</p>
+      <h4>Squad (${t.players.length} Players)</h4>
+      <div class="players-roster">${t.players.map(pl=>`
+        <div class="player-chip" onclick="openPlayerModal(${t.id},'${pl.name}')">
+          <div class="pc-avatar" style="background:${t.color}22;color:${t.color}">${pl.name.split(' ').map(n=>n[0]).join('')}</div>
+          <div class="pc-info"><strong>${pl.name.split(' ')[0]}</strong><small>#${pl.num} · ${pl.pos}</small></div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  document.getElementById('teamModal').classList.add('open');
+}
+
+// ════════════════════════════════════════════════
+// PLAYERS
+// ════════════════════════════════════════════════
+function openPlayerModal(teamId,playerName){
+  const t=TEAMS.find(x=>x.id===teamId);
+  const pl=t?.players.find(p=>p.name===playerName);
+  if(!pl||!t)return;
+  document.getElementById('playerModalBody').innerHTML=`
+    <div class="pm-banner" style="background:linear-gradient(135deg,${t.bg},${t.color}44)">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:.1;font-family:var(--font-display);font-size:6rem;color:${t.color}">${t.abbr}</div>
+      <div class="pm-banner-overlay"></div>
+    </div>
+    <button class="pm-close" onclick="closeModals()">✕</button>
+    <div class="pm-body" style="position:relative">
+      <div class="pm-num">${pl.num}</div>
+      <div class="pm-header">
+        <div class="pm-avatar-placeholder" style="background:${t.color}22;color:${t.color};border-color:${t.color}55">${pl.name.split(' ').map(n=>n[0]).join('')}</div>
+        <div>
+          <div class="pm-name">${pl.name}</div>
+          <div class="pm-pos">${pl.pos} · ${t.name}</div>
+          <div style="margin-top:.35rem;display:flex;gap:.5rem;flex-wrap:wrap">
+            <span style="background:${t.color}22;color:${t.color};font-size:.65rem;padding:2px 9px;border-radius:2px;font-family:var(--font-ui);letter-spacing:.5px">#${pl.num}</span>
+            <span style="background:rgba(244,169,0,.15);color:var(--gold);font-size:.65rem;padding:2px 9px;border-radius:2px;font-family:var(--font-ui);letter-spacing:.5px">KPL 2025</span>
+          </div>
+        </div>
+      </div>
+      <div class="pm-stats">
+        <div class="pm-stat"><span class="v">${pl.goals}</span><span class="l">Goals</span></div>
+        <div class="pm-stat"><span class="v">${pl.assists}</span><span class="l">Assists</span></div>
+        <div class="pm-stat"><span class="v">${pl.goals+pl.assists}</span><span class="l">Total Pts</span></div>
+        <div class="pm-stat"><span class="v">${pl.gp}</span><span class="l">Games</span></div>
+      </div>
+      <div class="pm-info-grid">
+        <div>
+          <div class="pm-info-row"><span class="k">Position</span><span class="v2">${pl.pos}</span></div>
+          <div class="pm-info-row"><span class="k">Jersey #</span><span class="v2">${pl.num}</span></div>
+          <div class="pm-info-row"><span class="k">Team</span><span class="v2" style="color:${t.color}">${t.name}</span></div>
+        </div>
+        <div>
+          <div class="pm-info-row"><span class="k">Goals/Game</span><span class="v2">${(pl.goals/pl.gp).toFixed(2)}</span></div>
+          <div class="pm-info-row"><span class="k">Assists/Game</span><span class="v2">${(pl.assists/pl.gp).toFixed(2)}</span></div>
+          <div class="pm-info-row"><span class="k">Season</span><span class="v2">KPL 2025</span></div>
+        </div>
+      </div>
+      <div style="margin-top:1.25rem;padding:.75rem;background:rgba(255,255,255,.03);border-radius:4px;font-size:.75rem;color:var(--muted);text-align:center">
+        📷 Player photo uploads enabled for admins via the Player Portal
+      </div>
+    </div>`;
+  document.getElementById('playerModal').classList.add('open');
+  document.getElementById('teamModal').classList.remove('open');
+}
+
+function closeModals(){
+  document.querySelectorAll('.overlay-bg').forEach(m=>m.classList.remove('open'));
+}
+document.querySelectorAll('.overlay-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals();}));
+
+// ════════════════════════════════════════════════
+// STANDINGS
+// ════════════════════════════════════════════════
+function standingRowHTML(t,i,compact=false){
+  const pts=t.w*3+t.d,gd=t.gf-t.ga,p=t.w+t.d+t.l;
+  const rankCls=i===0?'g':i===1?'s':i===2?'b':'';
+  const form=FORMS[i]||['W','L','W','D','L'];
+  const formHtml=form.map(f=>`<span class="fb ${f.toLowerCase()}">${f}</span>`).join('');
+  if(compact) return `<tr><td><span class="st-rank ${rankCls}">${i+1}</span></td><td><div class="st-team"><div class="st-dot" style="background:${t.color}"></div>${t.name}</div></td><td>${p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td style="color:${gd>0?'#27ae60':gd<0?'var(--red)':'var(--muted)'}">${gd>0?'+':''}${gd}</td><td style="font-weight:700;color:${i===0?'var(--gold)':'inherit'}">${pts}</td></tr>`;
+  return `<tr><td><span class="st-rank ${rankCls}">${i+1}</span></td><td><div class="st-team"><div class="st-dot" style="background:${t.color}"></div>${t.name}</div></td><td>${p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td>${t.gf}</td><td>${t.ga}</td><td style="color:${gd>0?'#27ae60':gd<0?'var(--red)':'var(--muted)'}">${gd>0?'+':''}${gd}</td><td style="font-weight:700;color:${i===0?'var(--gold)':'inherit'}">${pts}</td><td>${formHtml}</td></tr>`;
+}
+function renderStandings(){
+  const sorted=[...TEAMS].sort((a,b)=>(b.w*3+b.d)-(a.w*3+a.d));
+  document.getElementById('standingsBody').innerHTML=sorted.map((t,i)=>standingRowHTML(t,i)).join('');
+}
+function filterStandings(f,btn){document.querySelectorAll('#standings .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderStandings();}
+
+// ════════════════════════════════════════════════
+// NEWS
+// ════════════════════════════════════════════════
+function renderNews(){
+  const feat=NEWS[0],rest=NEWS.slice(1);
+  document.getElementById('newsGrid').innerHTML=`
+    <div class="news-grid" style="margin-bottom:1.5rem">
+      <div class="news-featured" onclick="showToast('${feat.title}')">
+        <div class="news-featured-img" style="background:linear-gradient(135deg,${feat.color||'#1a0008'},#0d0d0d)"></div>
+        <div class="news-featured-overlay"></div>
+        <div class="news-featured-body"><span class="nf-tag">${feat.tag}</span><div class="nf-title">${feat.title}</div><div class="nf-meta">${feat.date}</div></div>
+      </div>
+      <div class="news-list">${rest.slice(0,4).map(n=>`<div class="news-item" onclick="showToast('${n.title}')"><div class="ni-tag">${n.tag}</div><div class="ni-title">${n.title}</div><div class="ni-meta">${n.date}</div></div>`).join('')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem">${rest.slice(4).map(n=>`<div class="news-item" onclick="showToast('${n.title}')"><div class="ni-tag">${n.tag}</div><div class="ni-title" style="font-size:.9rem">${n.title}</div><div class="ni-meta">${n.date}</div></div>`).join('')}</div>`;
+}
+
+// ════════════════════════════════════════════════
+// GALLERY
+// ════════════════════════════════════════════════
+function renderGallery(){
+  const heights=['140px','200px','160px','180px','220px','150px','190px','170px','210px','155px','185px','175px','230px','145px','195px','165px','215px','185px','160px','200px'];
+  document.getElementById('galleryGrid').innerHTML=GALLERY_EMOJIS.map((e,i)=>`
+    <div class="gallery-tile" onclick="showToast('Photo viewer — connect backend to load real images')">
+      <div class="gallery-tile-inner" style="height:${heights[i%heights.length]};background:linear-gradient(135deg,${TEAMS[i%TEAMS.length].bg},${TEAMS[i%TEAMS.length].color}22);display:flex;align-items:center;justify-content:center;font-size:3rem">${e}</div>
+      <div class="gallery-tile-overlay"></div>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════
+// LIVE SCORE UPDATE
+// ════════════════════════════════════════════════
+let liveSecs=47*60+23,liveH=7,liveA=5;
+setInterval(()=>{
+  if(liveSecs>0){liveSecs--;
+    const m=Math.floor(liveSecs/60),s=liveSecs%60;
+    const el=document.getElementById('liveScoreBig');
+    if(el) el.textContent=`${liveH} — ${liveA}`;
+  }
+},1000);
+
+// ════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);
+}
+
+// ════════════════════════════════════════════════
+// KEYBOARD
+// ════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals();});
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+initParticles();
+initTicker();
+renderHome();
+renderFixtures();
+renderTeams();
+renderStandings();
+renderNews();
+renderGallery();
+renderTournaments();
+</script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Kenya Rollball Federation — Official site for tournaments, fixtures, standings, teams and live scores."/>
+<meta name="keywords" content="Kenya Rollball, KRF, Rollball Kenya, KPL, Kenya sports"/>
+<meta property="og:title" content="Kenya Rollball Federation"/>
+<meta property="og:description" content="Official home of Rollball in Kenya"/>
+<meta property="og:image" content="/assets/images/og-image.jpg"/>
+<title>Kenya Rollball Federation | KRF</title>
+<link rel="stylesheet" href="css/public.css"/>
+<!-- Supabase realtime client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- Inject env vars from server (Vercel edge config or meta tags) -->
+<script>
+  window.ENV_SUPABASE_URL      = '%%SUPABASE_URL%%';
+  window.ENV_SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
+  window.ENV_API_BASE          = '/api';
+</script>
+</head>
+<body>
+
+<!-- ── HERO VIDEO BACKGROUND ── -->
+<div id="heroBg">
+  <video id="heroBgVideo" autoplay muted loop playsinline>
+    <source src="" type="video/mp4"/>
+  </video>
+  <canvas id="particleCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="vignette"></div>
+  <div class="grain"></div>
+</div>
+
+<!-- ── TOURNAMENT BG VIDEO ── -->
+<div id="tournamentBg">
+  <video id="tBgVideo" autoplay muted loop playsinline></video>
+  <div class="toverlay"></div>
+</div>
+
+<!-- ── NAV ── -->
+<nav id="mainNav">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="showPage('home')">🇰🇪 KRF <em>KENYA</em></div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-page="home"        onclick="showPage('home',this)">Home</button>
+      <button class="nav-btn"        data-page="tournaments" onclick="showPage('tournaments',this)">Tournaments</button>
+      <button class="nav-btn"        data-page="fixtures"    onclick="showPage('fixtures',this)">Fixtures</button>
+      <button class="nav-btn"        data-page="teams"       onclick="showPage('teams',this)">Teams</button>
+      <button class="nav-btn"        data-page="standings"   onclick="showPage('standings',this)">Standings</button>
+      <button class="nav-btn"        data-page="news"        onclick="showPage('news',this)">News</button>
+      <button class="nav-btn"        data-page="gallery"     onclick="showPage('gallery',this)">Gallery</button>
+    </div>
+    <div style="display:flex;align-items:center">
+      <div class="nav-live" id="navLive" style="display:none"><div class="live-dot"></div>Live</div>
+      <button class="nav-portal" onclick="window.location.href='/portal'">Player Portal →</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── LIVE TICKER ── -->
+<div class="live-ticker">
+  <div class="ticker-inner" id="tickerInner">
+    <span class="ticker-item">Loading KRF live data...<span class="ticker-sep"> | </span></span>
+  </div>
+</div>
+
+<!-- ══════════════ HOME ══════════════ -->
+<div id="home" class="page active">
+  <div class="home-hero">
+    <div class="home-hero-content">
+      <div style="font-family:var(--font-ui);font-size:.68rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:1rem">🇰🇪 Official Federation</div>
+      <h1 class="hero-h1">KENYA<span class="line2">ROLLBALL</span><span class="line3">FEDERATION</span></h1>
+      <div class="hero-meta">
+        <div class="hero-stat"><span class="val" id="heroTeams">12</span><span class="lbl">Teams</span></div>
+        <div class="hero-stat"><span class="val" id="heroPlayers">186</span><span class="lbl">Players</span></div>
+        <div class="hero-stat"><span class="val" id="heroTours">4</span><span class="lbl">Tournaments</span></div>
+        <div class="hero-stat"><span class="val" id="heroMatches">58</span><span class="lbl">Matches</span></div>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('fixtures')">View Fixtures</button>
+        <button class="btn-outline" onclick="showPage('standings')">League Table</button>
+        <button class="btn-outline" style="border-color:rgba(244,169,0,.3);color:var(--gold)" onclick="window.location.href='/portal'">Player Portal →</button>
+      </div>
+    </div>
+    <div class="scroll-hint">↓ scroll</div>
+  </div>
+
+  <!-- LIVE MATCH STRIP -->
+  <div class="live-strip" id="liveStrip" style="display:none">
+    <div class="live-strip-inner">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div class="nav-live"><div class="live-dot"></div>Live Now</div>
+        <span style="font-family:var(--font-ui);font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px" id="liveStripTour"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:1.75rem">
+        <span style="font-family:var(--font-ui);font-size:.92rem;font-weight:700" data-home></span>
+        <span data-live-score style="font-family:var(--font-display);font-size:2rem;color:var(--gold);letter-spacing:3px">0 — 0</span>
+        <span style="font-family:var(--font-ui);font-size:.92rem;font-weight:700" data-away></span>
+      </div>
+      <button class="btn-primary" style="font-size:.66rem;padding:.42rem .95rem" onclick="showPage('fixtures')">Scorecard →</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>Currently Active</small>FEATURED <em>TOURNAMENTS</em></h2>
+      <button class="sec-link" onclick="showPage('tournaments')">All Tournaments →</button>
+    </div>
+    <div class="tournament-scroll" id="homeTournaments">
+      <div style="color:var(--dim);padding:1rem;font-size:.82rem">Loading tournaments...</div>
+    </div>
+
+    <div class="sec-head">
+      <h2><small>KPL Championship 2025</small>LEAGUE <em>TABLE</em></h2>
+      <button class="sec-link" onclick="showPage('standings')">Full Table →</button>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem">
+      <table class="standings-table">
+        <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+        <tbody id="homeStandingsBody"><tr><td colspan="8" style="color:var(--dim);padding:1rem;text-align:center">Loading standings...</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="sec-head">
+      <h2><small>Federation</small>LATEST <em>NEWS</em></h2>
+      <button class="sec-link" onclick="showPage('news')">All News →</button>
+    </div>
+    <div id="homeNews"><div style="color:var(--dim);padding:1rem;font-size:.82rem">Loading news...</div></div>
+
+    <div class="sec-head">
+      <h2><small>Recent</small>MATCH <em>RESULTS</em></h2>
+    </div>
+    <div id="homeResults"></div>
+
+    <div class="sponsors-section">
+      <div class="sponsors-label">Our Partners & Sponsors</div>
+      <div class="sponsors-row" id="homeSponsors"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOURNAMENTS ══════════════ -->
+<div id="tournaments" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>All Competitions</small>TOURNAMENTS & <em>LEAGUES</em></h2></div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterTournaments('all',this)">All</button>
+      <button class="tab" onclick="filterTournaments('ongoing',this)">Ongoing</button>
+      <button class="tab" onclick="filterTournaments('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterTournaments('completed',this)">Completed</button>
+    </div>
+    <div class="tournament-scroll" id="allTournaments"></div>
+    <div id="tournamentDetail" style="display:none;margin-top:2rem">
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:2rem" id="tournamentDetailBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ FIXTURES ══════════════ -->
+<div id="fixtures" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>All Matches</small>FIXTURES & <em>RESULTS</em></h2></div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterFixtures('all',this)">All Matches</button>
+      <button class="tab" onclick="filterFixtures('live',this)">● Live</button>
+      <button class="tab" onclick="filterFixtures('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterFixtures('completed',this)">Results</button>
+    </div>
+    <div class="fixtures-list" id="fixturesList"></div>
+  </div>
+</div>
+
+<!-- ══════════════ TEAMS ══════════════ -->
+<div id="teams" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>KPL 2025</small>ALL <em>TEAMS</em></h2></div>
+    <div class="teams-grid" id="teamsGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════ STANDINGS ══════════════ -->
+<div id="standings" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>Season 2025</small>LEAGUE <em>STANDINGS</em></h2></div>
+    <div class="tabs" id="standingsTabs"></div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <table class="standings-table">
+        <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Form</th></tr></thead>
+        <tbody id="standingsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ NEWS ══════════════ -->
+<div id="news" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>Federation</small>NEWS & <em>ANNOUNCEMENTS</em></h2></div>
+    <div id="newsGrid"></div>
+  </div>
+</div>
+
+<!-- ══════════════ GALLERY ══════════════ -->
+<div id="gallery" class="page">
+  <div class="container">
+    <div class="sec-head"><h2><small>Match Day</small>PHOTO & VIDEO <em>GALLERY</em></h2></div>
+    <div class="tabs">
+      <button class="tab active" onclick="setGalleryTab('photos',this)">📷 Photos</button>
+      <button class="tab" onclick="setGalleryTab('videos',this)">🎬 Videos</button>
+    </div>
+    <div id="photosPanel"><div class="gallery-masonry" id="galleryGrid"></div></div>
+    <div id="videosPanel" style="display:none"><div class="video-grid" id="videoGrid"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+<div class="overlay-bg" id="teamModal"><div class="team-modal" id="teamModalBody"></div></div>
+<div class="overlay-bg" id="playerModal"><div class="player-modal" id="playerModalBody"></div></div>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="f-logo">KRF <span>KENYA</span></div>
+      <p>The official governing body for Rollball in Kenya, promoting the sport across all 47 counties.</p>
+      <div style="margin-top:.85rem;font-size:.7rem;color:var(--muted)">info@krfkenya.co.ke · +254 700 000 000</div>
+    </div>
+    <div class="footer-col">
+      <h4>Competition</h4>
+      <a onclick="showPage('tournaments')">Tournaments</a>
+      <a onclick="showPage('fixtures')">Fixtures</a>
+      <a onclick="showPage('standings')">Standings</a>
+      <a onclick="showPage('teams')">Teams</a>
+    </div>
+    <div class="footer-col">
+      <h4>Media</h4>
+      <a onclick="showPage('news')">News</a>
+      <a onclick="showPage('gallery')">Gallery</a>
+      <a onclick="showToast('YouTube — coming soon')">Videos</a>
+      <a onclick="showToast('Press contact: press@krfkenya.co.ke')">Press</a>
+    </div>
+    <div class="footer-col">
+      <h4>Federation</h4>
+      <a onclick="window.location.href='/portal'">Player Portal</a>
+      <a onclick="showToast('About KRF Kenya')">About KRF</a>
+      <a onclick="showToast('Contact: info@krfkenya.co.ke')">Contact</a>
+      <a onclick="showToast('Sponsor enquiries: sponsors@krfkenya.co.ke')">Sponsors</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2025 Kenya Rollball Federation. All rights reserved.</p>
+    <div class="social-icons" id="socialIcons">
+      <div class="soc" onclick="openSocial('facebook')">f</div>
+      <div class="soc" onclick="openSocial('twitter')">✕</div>
+      <div class="soc" onclick="openSocial('instagram')">◎</div>
+      <div class="soc" onclick="openSocial('youtube')">▶</div>
+      <div class="soc" onclick="openSocial('tiktok')">♪</div>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Social links from settings
+function openSocial(platform) {
+  const urls = {
+    facebook: STATE?.settings?.facebook_url || 'https://facebook.com',
+    twitter: STATE?.settings?.twitter_url || 'https://x.com',
+    instagram: STATE?.settings?.instagram_url || 'https://instagram.com',
+    youtube: STATE?.settings?.youtube_url || 'https://youtube.com',
+    tiktok: STATE?.settings?.tiktok_url || 'https://tiktok.com',
+  };
+  window.open(urls[platform], '_blank');
+}
+
+// Particle canvas fallback when no hero video
+(function initParticles() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [];
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+  for (let i = 0; i < 55; i++) particles.push({
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.5+.3, vx: (Math.random()-.5)*.28, vy: (Math.random()-.5)*.28,
+    o: Math.random()*.25+.04, c: Math.random()>.65?'200,16,46':'244,169,0'
+  });
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${p.c},${p.o})`; ctx.fill();
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    });
+    for (let i = 0; i < particles.length; i++) for (let j = i+1; j < particles.length; j++) {
+      const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      if (d < 95) {
+        ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(200,16,46,${.035*(1-d/95)})`; ctx.lineWidth = .5; ctx.stroke();
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Nav scroll effect
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 20);
+});
+
+// Build standings tabs after tournaments load
+window.addEventListener('krf-data-loaded', () => {
+  const tabsEl = document.getElementById('standingsTabs');
+  if (!tabsEl || !STATE.tournaments?.length) return;
+  tabsEl.innerHTML = STATE.tournaments.map((t, i) =>
+    `<button class="tab ${i===0?'active':''}" onclick="filterStandings('${t.id}',this)">${t.name}</button>`
+  ).join('');
+});
+</script>
+<script src="js/public.js"></script>
+</body>
+</html>

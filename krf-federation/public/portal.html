@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>KRF Portal — Kenya Rollball Federation</title>
+<link rel="stylesheet" href="css/portal.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  window.ENV_SUPABASE_URL      = '%%SUPABASE_URL%%';
+  window.ENV_SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
+  window.ENV_API_BASE          = '/api';
+</script>
+</head>
+<body>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen">
+  <div class="login-kicker">🇰🇪 Kenya Rollball Federation</div>
+  <div class="login-box">
+    <div class="login-logo">KRF <span>PORTAL</span></div>
+    <div class="login-sub">Member access — your role loads automatically</div>
+
+    <div class="role-grid" id="roleGrid"></div>
+
+    <div id="loginForm">
+      <div class="field"><label>Email / Member ID</label><input type="text" id="loginEmail" placeholder="email@krfkenya.co.ke" autocomplete="email"/></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/></div>
+      <button class="btn-login" onclick="doLogin()">SIGN IN →</button>
+      <div class="login-hint">
+        New player? <span onclick="showRegForm()">Register here</span> ·
+        <span onclick="showToast('Reset link sent to your email')">Forgot password</span>
+      </div>
+    </div>
+
+    <div id="registerForm" style="display:none">
+      <div class="field"><label>Full Name</label><input type="text" id="regName" placeholder="As on National ID"/></div>
+      <div class="field"><label>Email</label><input type="email" id="regEmail" placeholder="yourname@email.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="regPass" placeholder="Min. 8 characters"/></div>
+      <button class="btn-login" style="background:var(--green)" onclick="doRegister()">CREATE ACCOUNT →</button>
+      <div class="login-hint"><span onclick="showLoginForm()">← Back to login</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL ═══ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="logo">KRF <span>PORTAL</span></div>
+    </div>
+    <div class="sb-user">
+      <div class="sb-avatar" id="sbAv">??</div>
+      <div class="sb-user-info">
+        <div class="uname" id="sbName">Loading...</div>
+        <div class="urole" id="sbRole">Role</div>
+      </div>
+    </div>
+    <div class="sb-live-pill" onclick="nav('live')">
+      <div class="ld"></div>
+      <span id="sbLivePill">LIVE — Loading...</span>
+    </div>
+    <nav class="sb-nav" id="sideNav"></nav>
+    <div class="sb-bottom">
+      <button class="btn-small" onclick="window.location.href='/'">← Public Site</button>
+      <button class="btn-small danger" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="tb-title" id="tbTitle">OVERVIEW</div>
+        <div class="tb-sub"   id="tbSub">Dashboard</div>
+      </div>
+      <div class="tb-right">
+        <div class="tb-chip live">● LIVE</div>
+        <div class="tb-chip" id="tbSeason">KPL 2025</div>
+        <div class="tb-chip role" id="tbRole">Member</div>
+      </div>
+    </div>
+    <div class="content" id="mainContent">
+      <div style="display:flex;align-items:center;justify-content:center;height:60vh;color:var(--dim);font-size:.85rem">
+        Loading portal...
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ PAGE RENDER ENGINE ═══ -->
+<script>
+// ─────────────────────────────────────────────
+// LOGIN FORM TOGGLE
+// ─────────────────────────────────────────────
+function showRegForm() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  // Force player role tab when registering
+  const tabs = document.querySelectorAll('.role-tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  const playerTab = document.querySelector('.role-tab[data-role="player"]');
+  if (playerTab) { playerTab.classList.add('active'); selectRole('player', playerTab); }
+}
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+// ALL PAGE RENDERS — delegates from portal.js
+// ─────────────────────────────────────────────
+window.renderPortalPageById = function(id) {
+  const renders = {
+    overview,   live,        lineup,     events,
+    report,     playerreg,   teamreg,    users,
+    teams_admin,tournaments, gallery,    settings,
+    profile,    mystats,     schedule,
+    commlive,   precheck,    incidents,  countersign,
+    boundary,   lineview,    linesign,   mydocs,
+  };
+  if (renders[id]) renders[id]();
+  else document.getElementById('mainContent').innerHTML =
+    `<div style="padding:2rem;color:var(--dim)">Page "${id}" coming soon.</div>`;
+};
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function panel(title, tag, body) {
+  return `<div class="panel">
+    <div class="ph"><span class="pt">${title}</span><span class="pg">${tag}</span></div>
+    <div class="pb">${body}</div>
+  </div>`;
+}
+
+function signoffChainHTML() {
+  const s = STATE.reportState;
+  return `<div class="signoff-chain">
+    <div class="sof-step done">✓ Events logged</div><div class="sof-arrow">→</div>
+    <div class="sof-step ${s.refSubmitted?'done':'current'}">Referee submits${s.refSubmitted?' ✓':''}</div><div class="sof-arrow">→</div>
+    <div class="sof-step ${s.lineSignedOff?'done':s.refSubmitted?'current':'pending'}">Linesman signs${s.lineSignedOff?' ✓':''}</div><div class="sof-arrow">→</div>
+    <div class="sof-step ${s.commCountersigned?'locked':s.lineSignedOff?'current':'pending'}">${s.commCountersigned?'🔒 Locked':'Commissioner countersigns'}</div><div class="sof-arrow">→</div>
+    <div class="sof-step ${s.commCountersigned?'done':'pending'}">Admin publishes${s.commCountersigned?' ✓':''}</div>
+  </div>`;
+}
+
+function scoreMiniHTML() {
+  const m = STATE.liveMatch;
+  const home = m?.home_team?.name || 'Home Team';
+  const away = m?.away_team?.name || 'Away Team';
+  return `<div style="background:var(--bg3);border-radius:6px;padding:.75rem;text-align:center">
+    <div style="font-size:.6rem;color:var(--dim);letter-spacing:.8px;margin-bottom:.4rem;text-transform:uppercase">${m?.tournament?.name||'KPL'} · ${m?.venue||'Nyayo Stadium'}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:1rem">
+      <span style="font-size:.82rem;font-weight:600">${home}</span>
+      <span id="miniScore" style="font-family:var(--font-head);font-size:2rem;color:var(--gold);letter-spacing:3px">${STATE.liveH} — ${STATE.liveA}</span>
+      <span style="font-size:.82rem;font-weight:600">${away}</span>
+    </div>
+    <div id="miniTimer" style="font-size:.68rem;color:var(--red);margin-top:.3rem;font-weight:500">Q${STATE.period} · In Progress</div>
+  </div>`;
+}
+
+function schedMiniHTML() {
+  const upcoming = (STATE.schedules||[]).filter(m=>m.status==='upcoming').slice(0,3);
+  if (!upcoming.length) return '<div style="color:var(--dim);font-size:.78rem;padding:.25rem 0">No upcoming fixtures</div>';
+  return upcoming.map(s=>{
+    const d = s.match_date ? new Date(s.match_date).toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'}) : 'TBC';
+    return `<div style="display:flex;align-items:center;gap:.65rem;padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.03)">
+      <div style="text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.28rem .5rem;min-width:38px;flex-shrink:0">
+        <div style="font-family:var(--font-head);font-size:1.1rem;color:var(--gold);line-height:1">${new Date(s.match_date||Date.now()).getDate()}</div>
+        <div style="font-size:.5rem;color:var(--muted);text-transform:uppercase">${d.split(' ')[0]}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:.78rem;font-weight:500;color:var(--white)">${s.home_team?.name||'TBC'} vs ${s.away_team?.name||'TBC'}</div>
+        <div style="font-size:.62rem;color:var(--dim);margin-top:1px">${d} · ${s.tournament?.name||''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function docProgressHTML(docs, navTarget) {
+  const done = docs.filter(d=>d.status==='done'||d.status==='approved').length;
+  const pct  = docs.length ? Math.round((done/docs.length)*100) : 0;
+  return `<div class="prog-wrap">
+    <div class="prog-label"><span>${done}/${docs.length} docs</span><span style="color:var(--gold);font-weight:600">${pct}%</span></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+  </div>
+  ${docs.slice(0,4).map(d=>`
+    <div style="display:flex;align-items:center;gap:.4rem;padding:.28rem 0;font-size:.74rem;border-bottom:1px solid rgba(255,255,255,.025)">
+      <span>${d.icon||'📄'}</span>
+      <span style="flex:1;color:var(--soft)">${d.label||d.doc_type}</span>
+      <span class="bdg bdg-${d.status==='approved'||d.status==='done'?'green':d.status==='flagged'?'red':'gray'}">${d.status}</span>
+    </div>`).join('')}
+  <button class="btn-s" style="width:100%;margin-top:.55rem;font-size:.7rem;padding:.32rem" onclick="nav('${navTarget||'mydocs'}')">View All →</button>`;
+}
+
+function docsGridHTML(docs) {
+  return `<div class="doc-grid">${docs.map(d=>`
+    <div class="doc-item ${d.status==='approved'||d.status==='done'?'done':d.status==='flagged'?'flagged':''}"
+         onclick="triggerDocUpload('${d.id||d.doc_type}')">
+      <div class="di-icon">${d.icon||'📄'}</div>
+      <div class="di-info"><strong>${d.label||d.doc_type}</strong><small>${d.sub||d.description||''}</small></div>
+      <span class="di-st ${d.status==='approved'||d.status==='done'?'done':d.status==='flagged'?'flagged':'pending'}">${d.status==='approved'||d.status==='done'?'✓':d.status==='flagged'?'⚠':'+'}</span>
+    </div>`).join('')}</div>`;
+}
+
+function triggerDocUpload(docType) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.pdf,.jpg,.jpeg,.png,.webp';
+  input.onchange = async (e) => {
+    if (e.target.files[0]) await handleDocUpload(e.target, docType);
+  };
+  input.click();
+}
+
+function eventItemsHTML(events, max=20) {
+  const iconMap = { goal:'⚽', yellow:'🟨', red_card:'🟥', foul:'🔴', sub:'🔄', injury:'🩹', boundary:'🚩', offside:'⛔' };
+  return events.slice(0,max).map(e=>`
+    <div class="ev-item">
+      <span class="ev-min">${e.min||e.minute+"'"}</span>
+      <div class="ev-ico ${e.type||e.event_type}">${e.icon||iconMap[e.event_type]||'◉'}</div>
+      <span class="ev-desc">${e.desc||e.description||''}</span>
+      <span class="ev-by">${e.by||e.logged_by_role||''}</span>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────
+// STATIC DOC DEFINITIONS (shown before API loads)
+// ─────────────────────────────────────────────
+const PLAYER_DOCS = [
+  {id:'national_id',      label:'National ID',       sub:'ID number + clear scan',          icon:'🪪', status:'pending'},
+  {id:'passport_photo',   label:'Passport Photo',    sub:'Clear headshot, white bg',         icon:'📷', status:'pending'},
+  {id:'player_status',    label:'Player Status',     sub:'Amateur / Professional declaration',icon:'📋', status:'pending'},
+  {id:'ministry_form',    label:'Ministry Reg. Form',sub:'Duly completed & signed',          icon:'📄', status:'pending'},
+];
+const OFFICIAL_DOCS = [
+  {id:'national_id',         label:'National ID',          sub:'ID + scan',              icon:'🪪', status:'pending'},
+  {id:'passport_photo',      label:'Passport Photo',       sub:'Headshot',               icon:'📷', status:'pending'},
+  {id:'officiating_licence', label:'Officiating Licence',  sub:'KRF issued badge',       icon:'🏅', status:'pending'},
+  {id:'police_clearance',    label:'Police Clearance',     sub:'Good conduct cert.',     icon:'🏛️', status:'pending'},
+  {id:'helb_clearance',      label:'HELB Clearance',       sub:'Education loans',        icon:'🎓', status:'pending'},
+  {id:'eacc_clearance',      label:'EACC Clearance',       sub:'Anti-corruption',        icon:'⚖️', status:'pending'},
+  {id:'crb_clearance',       label:'CRB Clearance',        sub:'Credit reference',       icon:'💳', status:'pending'},
+  {id:'tax_compliance',      label:'Tax Compliance Cert.', sub:'KRA issued',             icon:'🧾', status:'pending'},
+  {id:'kra_pin',             label:'KRA PIN Certificate',  sub:'Revenue authority',      icon:'📌', status:'pending'},
+];
+const TEAM_DOCS = [
+  {id:'team_logo',         label:'Team Logo',          sub:'PNG, transparent bg',        icon:'🏷️', status:'pending'},
+  {id:'manager_photo',     label:'Manager Photo',      sub:'Head coach passport photo',  icon:'📸', status:'pending'},
+  {id:'assistant1_photo',  label:'Asst. Coach 1',      sub:'Passport photo',             icon:'📸', status:'pending'},
+  {id:'assistant2_photo',  label:'Asst. Coach 2',      sub:'Passport photo',             icon:'📸', status:'pending'},
+  {id:'police_clearance',  label:'Police Clearance',   sub:'Good conduct',               icon:'🏛️', status:'pending'},
+  {id:'helb_clearance',    label:'HELB Clearance',     sub:'Education loans',            icon:'🎓', status:'pending'},
+  {id:'eacc_clearance',    label:'EACC Clearance',     sub:'Anti-corruption',            icon:'⚖️', status:'pending'},
+  {id:'crb_clearance',     label:'CRB Clearance',      sub:'Credit reference',           icon:'💳', status:'pending'},
+  {id:'tax_compliance',    label:'Tax Compliance',     sub:'KRA certificate',            icon:'🧾', status:'pending'},
+  {id:'kra_pin',           label:'KRA PIN Cert.',      sub:'Revenue authority',          icon:'📌', status:'pending'},
+  {id:'players_list',      label:'Players List',       sub:'Max 15, signed & dated',     icon:'👥', status:'pending'},
+  {id:'contact_emails',    label:'Contact Emails',     sub:'Manager + all officials',    icon:'📧', status:'pending'},
+];
+
+function getCurrentDocs() {
+  const role = STATE.user?.role;
+  const loaded = STATE.docs || [];
+  const base = role === 'player' ? PLAYER_DOCS : OFFICIAL_DOCS;
+  // Merge loaded statuses into static definitions
+  return base.map(d => {
+    const live = loaded.find(l => l.doc_type === d.id);
+    return live ? { ...d, status: live.status } : d;
+  });
+}
+
+// ─────────────────────────────────────────────
+// ── OVERVIEW
+// ─────────────────────────────────────────────
+function overview() {
+  const role = STATE.user?.role;
+  if (role === 'player')       return overviewPlayer();
+  if (role === 'referee')      return overviewReferee();
+  if (role === 'commissioner') return overviewCommissioner();
+  if (role === 'linesman')     return overviewLinesman();
+  if (role === 'official')     return overviewOfficial();
+  overviewAdmin();
+}
+
+function overviewAdmin() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--red)"><div class="v">${STATE.teams?.length||12}</div><div class="l">Teams</div><div class="ch ch-neu">All registered</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">186</div><div class="l">Players</div><div class="ch ch-warn">↑ 12 pending</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">58</div><div class="l">Matches</div><div class="ch ch-up">↑ Season running</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">6</div><div class="l">Officials</div><div class="ch ch-neu">3 at live match</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        ${panel('LIVE MATCH','● Now', scoreMiniHTML()+`<button class="btn-p" style="width:100%;margin-top:.65rem;font-size:.78rem;padding:.5rem" onclick="nav('live')">OPEN LIVE PANEL</button>`)}
+        ${panel('OFFICIALS ON DUTY','Today',`
+          <table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead><tbody>
+            <tr><td style="font-weight:500">Dr. Grace Njoroge</td><td><span class="bdg bdg-teal">Commissioner</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
+            <tr><td style="font-weight:500">Peter Omondi</td><td><span class="bdg bdg-blue">Referee</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
+            <tr><td style="font-weight:500">Mary Chebet</td><td><span class="bdg bdg-amber">Linesman</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
+          </tbody></table>`)}
+      </div>
+      <div>
+        ${panel('QUICK ACTIONS','Admin shortcuts',`
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+            ${[['users','👥','Manage Users'],['teams_admin','⚽','Teams'],['tournaments','🏆','Tournaments'],
+               ['gallery','📸','Gallery'],['playerreg','📝','Registration'],['settings','⚙️','Settings']
+              ].map(([p,i,l])=>`
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.7rem;cursor:pointer;transition:all .2s"
+                   onclick="nav('${p}')" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="font-size:1.1rem;margin-bottom:.3rem">${i}</div>
+                <div style="font-size:.75rem;font-weight:600;color:var(--white)">${l}</div>
+              </div>`).join('')}
+          </div>`)}
+        ${panel('REPORT SIGN-OFF','KPL match', signoffChainHTML())}
+      </div>
+    </div>`;
+}
+
+function overviewPlayer() {
+  const docs = getCurrentDocs();
+  document.getElementById('mainContent').innerHTML = `
+    <div class="prof-head">
+      <div class="prof-av" style="background:var(--green-dim);color:var(--green);border-color:rgba(39,174,96,.4)">
+        ${STATE.user?.initials||'PL'}
+        <div class="prof-cam" onclick="triggerDocUpload('passport_photo')">📷</div>
+      </div>
+      <div>
+        <div class="pname">${STATE.user?.name||'Player'}</div>
+        <div class="ppos">${STATE.user?.position||'Position'} · ${STATE.user?.teams?.name||'Team'} · #${STATE.user?.jersey_number||'—'}</div>
+        <div class="ptags">
+          <span class="bdg bdg-green">KPL 2025</span>
+          <span class="bdg bdg-${STATE.user?.docs_status==='approved'?'green':STATE.user?.docs_status==='flagged'?'red':'amber'}">${STATE.user?.docs_status||'incomplete'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--red)"><div class="v">—</div><div class="l">Goals</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">—</div><div class="l">Games</div><div class="ch ch-neu">Played</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">—</div><div class="l">Assists</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">—</div><div class="l">Rank</div><div class="ch ch-neu">League standing</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        ${panel('NEXT FIXTURE','Upcoming',schedMiniHTML()+`<button class="btn-s" style="width:100%;margin-top:.6rem;font-size:.72rem;padding:.35rem" onclick="nav('schedule')">Full Schedule →</button>`)}
+        ${panel('REGISTRATION','Season 2025', docProgressHTML(docs,'playerreg'))}
+      </div>
+      <div>${panel('LEAGUE TABLE','KPL 2025',standingsMiniHTML())}</div>
+    </div>`;
+}
+
+function overviewReferee() {
+  const docs = getCurrentDocs();
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">1</div><div class="l">Live Match</div><div class="ch ch-up">● Q${STATE.period} active</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">${STATE.events.length}</div><div class="l">Events Logged</div><div class="ch ch-neu">This match</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">24</div><div class="l">Matches Officiated</div><div class="ch ch-up">↑ 2025</div></div>
+      <div class="sc" style="--sc-color:var(--red)"><div class="v">${STATE.reportState.refSubmitted?'Filed':'Pending'}</div><div class="l">Match Report</div><div class="ch ch-warn">Sign-off chain</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        ${panel('LIVE MATCH','● Score', scoreMiniHTML()+`
+          <div style="display:flex;gap:.5rem;margin-top:.65rem">
+            <button class="btn-p" style="flex:1;font-size:.78rem;padding:.5rem" onclick="nav('live')">SCORE ENTRY</button>
+            <button class="btn-s" style="flex:1;font-size:.75rem" onclick="nav('events')">EVENT LOG</button>
+          </div>`)}
+        ${panel('SIGN-OFF CHAIN','Report status', signoffChainHTML())}
+      </div>
+      <div>
+        ${panel('RECENT EVENTS','This match',`<div class="ev-list" style="max-height:180px">${eventItemsHTML(STATE.events,5)}</div><button class="btn-s" style="width:100%;margin-top:.5rem;font-size:.7rem;padding:.32rem" onclick="nav('events')">All Events →</button>`)}
+        ${panel('MY CLEARANCES','',docProgressHTML(docs,'mydocs'))}
+      </div>
+    </div>`;
+}
+
+function overviewCommissioner() {
+  const done = STATE.precheck?.filter(c=>c.done)?.length || 4;
+  const total = STATE.precheck?.length || 8;
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--teal)"><div class="v">1</div><div class="l">Active Match</div><div class="ch ch-up">● Supervising</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">${done}/${total}</div><div class="l">Checklist</div><div class="ch ch-warn">${total-done} pending</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">${STATE.reportState.commCountersigned?'Done':'Pending'}</div><div class="l">Countersign</div><div class="ch ch-neu">Referee report</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">18</div><div class="l">Supervised</div><div class="ch ch-up">↑ 2025</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        ${panel('MATCH OVERVIEW','Read-only',`
+          <div style="background:var(--bg3);border-radius:6px;padding:.85rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem">
+            <div>
+              <div style="font-family:var(--font-head);font-size:1.15rem;letter-spacing:1.5px">${STATE.liveMatch?.home_team?.name||'Home'} vs ${STATE.liveMatch?.away_team?.name||'Away'}</div>
+              <div style="font-size:.7rem;color:var(--dim);margin-top:.15rem">${STATE.liveMatch?.tournament?.name||'KPL'} · ${STATE.liveMatch?.venue||'Stadium'}</div>
+            </div>
+            <div style="font-family:var(--font-head);font-size:2rem;color:var(--gold);letter-spacing:3px">${STATE.liveH} — ${STATE.liveA}</div>
+          </div>
+          <button class="btn-s" style="width:100%;font-size:.75rem" onclick="nav('commlive')">Full Monitor View →</button>`)}
+        ${panel('PRE-MATCH CHECKLIST','Quick status',`
+          ${['Teams present & in uniform','Lineups verified','Eligibility confirmed','Venue inspected'].map((l,i)=>`
+            <div class="checklist-item">
+              <div class="ci-check ${i<4?'checked':''}">${i<4?'✓':''}</div>
+              <span class="ci-label ${i<4?'checked-text':''}">${l}</span>
+              <span class="bdg bdg-${i<4?'green':'amber'}">${i<4?'Done':'Pending'}</span>
+            </div>`).join('')}
+          <button class="btn-s" style="width:100%;margin-top:.55rem;font-size:.7rem;padding:.32rem" onclick="nav('precheck')">Full Checklist →</button>`)}
+      </div>
+      <div>
+        ${panel('SIGN-OFF CHAIN','Commissioner action', signoffChainHTML()+`
+          <div style="display:flex;gap:.5rem;margin-top:.65rem">
+            <button class="btn-s countersign" onclick="nav('countersign')">Countersign</button>
+            <button class="btn-s" onclick="nav('incidents')">Log Incident</button>
+          </div>`)}
+        ${panel('MY CLEARANCES','', docProgressHTML(getCurrentDocs(),'mydocs'))}
+      </div>
+    </div>`;
+}
+
+function overviewLinesman() {
+  const myEvents = STATE.events.filter(e=>(e.by||e.logged_by_role)==='linesman');
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--amber)"><div class="v">1</div><div class="l">Live Match</div><div class="ch ch-up">● Q${STATE.period}</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">${myEvents.length}</div><div class="l">Calls Logged</div><div class="ch ch-neu">This match</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">${STATE.reportState.lineSignedOff?'Signed':'Pending'}</div><div class="l">Sign-off</div><div class="ch ch-warn">Event log</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">3</div><div class="l">Assignments</div><div class="ch ch-neu">Upcoming</div></div>
+    </div>
+    <div class="g2">
+      <div>
+        ${panel('LIVE MATCH','● Active', scoreMiniHTML()+`
+          <div style="display:flex;gap:.5rem;margin-top:.65rem">
+            <button class="btn-p" style="flex:1;font-size:.78rem;padding:.5rem" onclick="nav('boundary')">LOG CALL</button>
+            <button class="btn-s" style="flex:1" onclick="nav('lineview')">Monitor</button>
+          </div>`)}
+        ${panel('SIGN EVENT LOG','Your action', signoffChainHTML()+`<button class="btn-s sign" style="width:100%;margin-top:.65rem" onclick="nav('linesign')">Review & Sign →</button>`)}
+      </div>
+      <div>
+        ${panel('MY CALLS','This match',`<div class="ev-list">${myEvents.length?eventItemsHTML(myEvents):'<div style="padding:.75rem;color:var(--muted);font-size:.78rem">No calls logged yet</div>'}</div>`)}
+        ${panel('MY CLEARANCES','', docProgressHTML(getCurrentDocs(),'mydocs'))}
+      </div>
+    </div>`;
+}
+
+function overviewOfficial() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--purple)"><div class="v">1</div><div class="l">Live Match</div><div class="ch ch-up">● Active</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">32</div><div class="l">Scored</div><div class="ch ch-neu">2025 Season</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">9</div><div class="l">Docs</div><div class="ch ch-up">Verified</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">3</div><div class="l">Upcoming</div><div class="ch ch-neu">Assignments</div></div>
+    </div>
+    <div class="g2">
+      <div>${panel('LIVE MATCH','● Scoring', scoreMiniHTML()+`<button class="btn-p" style="width:100%;margin-top:.65rem;font-size:.78rem;padding:.5rem" onclick="nav('live')">OPEN SCORE ENTRY</button>`)}</div>
+      <div>
+        ${panel('SCHEDULE','Upcoming', schedMiniHTML())}
+        ${panel('MY CLEARANCES','', docProgressHTML(getCurrentDocs(),'mydocs'))}
+      </div>
+    </div>`;
+}
+
+function standingsMiniHTML() {
+  const teams = STATE.teams?.slice(0,5) || [];
+  return teams.map((t,i)=>{
+    const s = t.standings?.[0]||{};
+    return `<div style="display:flex;align-items:center;gap:.4rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.025);font-size:.78rem">
+      <span style="font-family:var(--font-head);font-size:1rem;color:${i===0?'var(--gold)':'var(--muted)'};width:18px">${i+1}</span>
+      <span style="width:7px;height:7px;border-radius:50%;background:${t.color||'#888'};flex-shrink:0;margin:0 .3rem"></span>
+      <span style="flex:1;color:var(--soft)">${t.name}</span>
+      <span style="font-weight:600;color:${i===0?'var(--gold)':'var(--white)'}">${s.points||0}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--dim);font-size:.78rem">Loading standings...</div>';
+}
+
+// ─────────────────────────────────────────────
+// ── LIVE SCORE ENTRY
+// ─────────────────────────────────────────────
+function live() {
+  const m = STATE.liveMatch;
+  const home = m?.home_team?.name || 'Home Team';
+  const away = m?.away_team?.name || 'Away Team';
+  const homeColor = m?.home_team?.color || 'var(--red)';
+  const awayColor = m?.away_team?.color || 'var(--blue)';
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="live-sb">
+      <div class="lsb-top active-match">
+        <span class="lsb-info">${m?.tournament?.name||'KPL Championship'} · ${m?.venue||'Stadium'}</span>
+        <span class="lsb-period" id="periodBadge">Q${STATE.period}${STATE.matchEnded?' — FT':''}</span>
+      </div>
+      <div class="lsb-teams">
+        <div class="lsb-team"><div class="lsb-tname" style="color:${homeColor}">${home.toUpperCase()}</div><div class="lsb-tcity">Home</div></div>
+        <div class="lsb-center">
+          <div class="lsb-score"><span id="liveH">${STATE.liveH}</span> <span style="font-size:2rem;color:var(--muted)">—</span> <span id="liveA">${STATE.liveA}</span></div>
+          <div class="lsb-timer" id="liveTimerEl">Q${STATE.period} · Live</div>
+        </div>
+        <div class="lsb-team"><div class="lsb-tname" style="color:${awayColor}">${away.toUpperCase()}</div><div class="lsb-tcity">Away</div></div>
+      </div>
+      <div class="score-ctrl">
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <button class="goal-btn home" onclick="addGoal('home')">+ ${home.split(' ')[0].toUpperCase()} GOAL</button>
+          <button class="ctrl-btn undo" onclick="undoGoal('home')" title="Undo home goal">↩</button>
+        </div>
+        <div class="mid-ctrl">
+          <button class="ctrl-btn period" onclick="nextPeriod()">Next Period ▶</button>
+          <button class="ctrl-btn end" onclick="endMatch()" ${STATE.matchEnded?'disabled':''}>End Match</button>
+        </div>
+        <div style="display:flex;gap:.4rem;align-items:center">
+          <button class="ctrl-btn undo" onclick="undoGoal('away')" title="Undo away goal">↩</button>
+          <button class="goal-btn away" onclick="addGoal('away')">+ ${away.split(' ')[0].toUpperCase()} GOAL</button>
+        </div>
+      </div>
+    </div>
+    <div class="ev-log">
+      <div class="ev-head"><span class="pt">EVENT LOG</span><span class="pg" id="evCount">${STATE.events.length} events · Live</span></div>
+      <div class="ev-list" id="evList">${eventItemsHTML(STATE.events)}</div>
+      <div class="ev-add">
+        <select id="evType">
+          <option value="goal">⚽ Goal</option><option value="yellow">🟨 Yellow Card</option>
+          <option value="red_card">🟥 Red Card</option><option value="foul">🔴 Foul</option>
+          <option value="sub">🔄 Sub</option><option value="injury">🩹 Injury</option>
+          <option value="offside">⛔ Offside</option><option value="boundary">🚩 Boundary</option>
+        </select>
+        <input type="text" id="evPlayer" placeholder="Player name..."/>
+        <select id="evTeam"><option>${home}</option><option>${away}</option></select>
+        <button class="ev-log-btn" onclick="logEvent()">LOG</button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ── LINEUP
+// ─────────────────────────────────────────────
+function lineup() {
+  const positions = [
+    {pos:'Centre Man',name:'Karuri P.',num:10},
+    {pos:'Winger Right',name:'Otieno B.',num:7},
+    {pos:'Winger Left',name:'Mutua J.',num:8},
+    {pos:'Front Right',name:'Kamau P.',num:9},
+    {pos:'Front Left',name:'Njeri S.',num:11},
+  ];
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>
+        ${panel('STARTING LINEUP','5 positions · Rollball',`
+          <div style="background:var(--bg3);border-radius:8px;padding:1rem;margin-bottom:.75rem">
+            <div style="font-size:.58rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.65rem;text-align:center">Starting Five</div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem">
+              ${positions.map(p=>`
+                <div style="background:var(--bg4);border:1px solid rgba(244,169,0,.2);border-radius:5px;padding:.5rem .3rem;text-align:center;cursor:pointer" onclick="showToast('Edit: ${p.name}')">
+                  <div style="font-size:.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">${p.pos.split(' ')[0]}</div>
+                  <div style="font-family:var(--font-head);font-size:1.2rem;color:var(--gold);line-height:1">${p.num}</div>
+                  <div style="font-size:.68rem;color:var(--white);margin-top:.15rem">${p.name.split(' ')[0]}</div>
+                </div>`).join('')}
+            </div>
+          </div>
+          <button class="btn-p" style="width:100%;font-size:.78rem;padding:.5rem" onclick="showToast('Lineup submitted!')">SUBMIT LINEUP</button>`)}
+      </div>
+      <div>
+        ${panel('JERSEY NUMBERS','Update & confirm',`
+          <table class="dt">
+            <thead><tr><th>#</th><th>Player</th><th>Position</th><th></th></tr></thead>
+            <tbody>${positions.map(p=>`
+              <tr>
+                <td><span style="font-family:var(--font-head);font-size:1.1rem;color:var(--gold)">${p.num}</span></td>
+                <td style="font-weight:500;font-size:.8rem">${p.name}</td>
+                <td><span class="bdg bdg-gray">${p.pos}</span></td>
+                <td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing #${p.num}')">Edit</button></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <button class="btn-p" style="width:100%;margin-top:.75rem;font-size:.78rem;padding:.5rem" onclick="showToast('Numbers updated!')">UPDATE NUMBERS</button>`)}
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ── EVENTS
+// ─────────────────────────────────────────────
+function events() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="ev-log" style="margin-bottom:.8rem">
+      <div class="ev-head"><span class="pt">FULL EVENT LOG</span><span class="pg">${STATE.events.length} events</span></div>
+      <div class="ev-list" style="max-height:300px" id="evList">${eventItemsHTML(STATE.events,50)}</div>
+      <div class="ev-add">
+        <select id="evType">
+          <option value="goal">⚽ Goal</option><option value="yellow">🟨 Yellow</option>
+          <option value="red_card">🟥 Red Card</option><option value="foul">🔴 Foul</option>
+          <option value="sub">🔄 Sub</option><option value="injury">🩹 Injury</option>
+          <option value="boundary">🚩 Boundary</option><option value="offside">⛔ Offside</option>
+        </select>
+        <input type="text" id="evPlayer" placeholder="Player name..."/>
+        <select id="evTeam">
+          <option>${STATE.liveMatch?.home_team?.name||'Home'}</option>
+          <option>${STATE.liveMatch?.away_team?.name||'Away'}</option>
+        </select>
+        <button class="ev-log-btn" onclick="logEvent()">LOG</button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ── MATCH REPORT
+// ─────────────────────────────────────────────
+function report() {
+  const m = STATE.liveMatch;
+  document.getElementById('mainContent').innerHTML = `
+    ${signoffChainHTML()}
+    <div class="g2">
+      <div>
+        <div class="fsec"><div class="fsec-title">Match Details</div>
+          <div class="fgrid">
+            <div class="fg"><label>Home Team</label><input value="${m?.home_team?.name||''}" readonly/></div>
+            <div class="fg"><label>Away Team</label><input value="${m?.away_team?.name||''}" readonly/></div>
+            <div class="fg"><label>Home Score</label><input type="number" id="repHomeScore" value="${STATE.liveH}"/></div>
+            <div class="fg"><label>Away Score</label><input type="number" id="repAwayScore" value="${STATE.liveA}"/></div>
+            <div class="fg"><label>Venue</label><input value="${m?.venue||''}"/></div>
+            <div class="fg"><label>Date & Time</label><input type="datetime-local" value="${m?.match_date?new Date(m.match_date).toISOString().slice(0,16):''}"/></div>
+            <div class="fg"><label>Duration (mins)</label><input type="number" value="60"/></div>
+            <div class="fg"><label>Referee</label><input value="${STATE.user?.name||''}"/></div>
+          </div>
+        </div>
+        <div class="fsec"><div class="fsec-title">Match Narrative</div>
+          <div class="fg full"><label>Match Summary</label><textarea id="repNarrative" style="min-height:90px" placeholder="Describe how the match unfolded..."></textarea></div>
+          <div class="fg full"><label>Post-Match Comments</label><textarea id="repComments" placeholder="Official observations..."></textarea></div>
+          <div class="fg full"><label>Disciplinary Summary</label><textarea id="repDisciplinary" placeholder="Cards, incidents..."></textarea></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-p" onclick="handleReportSubmit()">SUBMIT REPORT</button>
+          <button class="btn-s" onclick="showToast('Draft saved')">Save Draft</button>
+        </div>
+        ${STATE.reportState.refSubmitted?`<div style="margin-top:.6rem;padding:.55rem;background:var(--green-dim);border-radius:5px;font-size:.72rem;color:#4cd97b">✓ Report submitted — awaiting linesman sign-off.</div>`:''}
+      </div>
+      <div>
+        ${panel('GOAL SCORERS','Auto from event log',`
+          <table class="dt"><thead><tr><th>Min</th><th>Player</th><th>Team</th></tr></thead>
+          <tbody>${STATE.events.filter(e=>e.type==='goal'||e.event_type==='goal').map(e=>`
+            <tr><td style="font-family:var(--font-mono);color:var(--gold)">${e.min||e.minute+"'"}</td>
+                <td>${e.desc?.replace(/<[^>]+>/g,'')||e.description||'—'}</td>
+                <td style="font-size:.72rem;color:var(--dim)">KPL</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--dim)">No goals logged</td></tr>'}
+          </tbody></table>`)}
+        ${panel('DISCIPLINARY','Cards & incidents',`
+          <table class="dt"><thead><tr><th>Min</th><th>Event</th><th>Type</th></tr></thead>
+          <tbody>${STATE.events.filter(e=>['yellow','red_card'].includes(e.type||e.event_type)).map(e=>`
+            <tr><td style="font-family:var(--font-mono);color:var(--gold)">${e.min||e.minute+"'"}</td>
+                <td>${(e.desc||e.description||'').replace(/<[^>]+>/g,'')}</td>
+                <td><span class="bdg bdg-amber">${(e.type||e.event_type).replace('_',' ')}</span></td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--dim)">None logged</td></tr>'}
+          </tbody></table>`)}
+      </div>
+    </div>`;
+}
+
+function handleReportSubmit() {
+  const narrative    = document.getElementById('repNarrative')?.value || '';
+  const comments     = document.getElementById('repComments')?.value  || '';
+  const disciplinary = document.getElementById('repDisciplinary')?.value || '';
+  submitReport(narrative, comments, disciplinary);
+}
+
+// ─────────────────────────────────────────────
+// ── COMMISSIONER SCREENS
+// ─────────────────────────────────────────────
+function commlive() {
+  document.getElementById('mainContent').innerHTML = `
+    <div style="background:var(--amber-dim);border:1px solid rgba(212,146,10,.25);border-radius:6px;padding:.6rem 1rem;font-size:.75rem;color:var(--amber);margin-bottom:.8rem">
+      👁 Commissioner view — read-only. Use the Incidents panel to log disputes.
+    </div>
+    <div class="live-sb">
+      <div class="lsb-top active-match"><span class="lsb-info">${STATE.liveMatch?.tournament?.name||'KPL'} · Supervised</span><span class="lsb-period">Q${STATE.period}</span></div>
+      <div class="lsb-teams">
+        <div class="lsb-team"><div class="lsb-tname" style="color:${STATE.liveMatch?.home_team?.color||'var(--red)'}">${(STATE.liveMatch?.home_team?.name||'HOME').toUpperCase()}</div></div>
+        <div class="lsb-center"><div class="lsb-score">${STATE.liveH} <span style="font-size:2rem;color:var(--muted)">—</span> ${STATE.liveA}</div><div class="lsb-timer">Read-only</div></div>
+        <div class="lsb-team"><div class="lsb-tname" style="color:${STATE.liveMatch?.away_team?.color||'var(--blue)'}">${(STATE.liveMatch?.away_team?.name||'AWAY').toUpperCase()}</div></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div>${panel('LIVE EVENTS','Referee & linesman',`<div class="ev-list" style="max-height:240px">${eventItemsHTML(STATE.events,15)}</div>`)}</div>
+      <div>${panel('LOG INCIDENT','Official record',`
+        <div class="fg"><label>Incident Type</label>
+          <select><option>Player Dispute</option><option>Team Protest</option><option>Venue Issue</option><option>Match Abandoned</option><option>Other</option></select>
+        </div>
+        <div class="fg"><label>Description</label><textarea id="incidentDesc" placeholder="Full description..."></textarea></div>
+        <div class="fg"><label>Action Taken</label><textarea id="incidentAction" placeholder="Action taken or recommended..."></textarea></div>
+        <div class="btn-row"><button class="btn-p" onclick="showToast('Incident logged — admin notified')">LOG INCIDENT</button></div>`)}</div>
+    </div>`;
+}
+
+function precheck() {
+  const checks = [
+    {id:'c1',label:'Both teams present & in uniform',done:true},
+    {id:'c2',label:'Lineups verified — 5 players each side',done:true},
+    {id:'c3',label:'Player eligibility confirmed',done:true},
+    {id:'c4',label:'Venue & playing surface inspected',done:true},
+    {id:'c5',label:'Equipment checked (ball, cones, nets)',done:false},
+    {id:'c6',label:'Match officials briefed',done:false},
+    {id:'c7',label:'Medical team on standby confirmed',done:false},
+    {id:'c8',label:'Scoreboard & timing systems working',done:false},
+  ];
+  STATE.precheck = checks;
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>${panel('PRE-MATCH CHECKLIST','Commissioner responsibility',`
+        ${checks.map(c=>`
+          <div class="checklist-item">
+            <div class="ci-check ${c.done?'checked':''}" onclick="togglePrecheck('${c.id}')">${c.done?'✓':''}</div>
+            <span class="ci-label ${c.done?'checked-text':''}">${c.label}</span>
+            <span class="bdg bdg-${c.done?'green':'amber'}">${c.done?'Done':'Pending'}</span>
+          </div>`).join('')}
+        <div class="btn-row" style="margin-top:.75rem">
+          <button class="btn-p" onclick="showToast('Checklist submitted to admin')">SUBMIT CHECKLIST</button>
+          <button class="btn-s" onclick="showToast('Saved')">Save Draft</button>
+        </div>`)}</div>
+      <div>${panel('TEAM ELIGIBILITY','Verify before kickoff',`
+        <table class="dt"><thead><tr><th>Team</th><th>Players</th><th>Eligible</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:500">${STATE.liveMatch?.home_team?.name||'Home'}</td><td>12</td><td>11</td><td><span class="bdg bdg-green">Cleared</span></td></tr>
+          <tr><td style="font-weight:500">${STATE.liveMatch?.away_team?.name||'Away'}</td><td>11</td><td>10</td><td><span class="bdg bdg-green">Cleared</span></td></tr>
+        </tbody></table>`)}</div>
+    </div>`;
+}
+
+function togglePrecheck(id) {
+  const c = STATE.precheck?.find(x=>x.id===id);
+  if (c) { c.done = !c.done; precheck(); }
+}
+
+function incidents() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>${panel('LOG NEW INCIDENT','',`
+        <div class="fgrid">
+          <div class="fg"><label>Incident Type</label><select><option>Player Dispute</option><option>Team Protest</option><option>Venue Issue</option><option>Match Abandoned</option><option>Suspension of Play</option></select></div>
+          <div class="fg"><label>Minute</label><input type="number" placeholder="e.g. 45"/></div>
+          <div class="fg full"><label>Teams Involved</label><select><option>${STATE.liveMatch?.home_team?.name||'Home'}</option><option>${STATE.liveMatch?.away_team?.name||'Away'}</option><option>Both Teams</option></select></div>
+          <div class="fg full"><label>Detailed Description</label><textarea style="min-height:90px" placeholder="Full description..."></textarea></div>
+          <div class="fg full"><label>Action Taken</label><textarea placeholder="Action taken or recommended..."></textarea></div>
+          <div class="fg"><label>Recommendation</label><select><option>None</option><option>Warning</option><option>Fine</option><option>Suspension</option></select></div>
+          <div class="fg"><label>Severity</label><select><option>Minor</option><option>Moderate</option><option>Serious</option><option>Critical</option></select></div>
+        </div>
+        <div class="btn-row"><button class="btn-p" onclick="showToast('Incident logged')">LOG INCIDENT</button></div>`)}</div>
+      <div>${panel('INCIDENT LOG','This match',`
+        <div style="padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04)">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.2rem"><strong>Team Protest</strong><span class="bdg bdg-amber">Pending</span></div>
+          <div style="font-size:.7rem;color:var(--dim)">Min 35 · Goal scoring position disputed</div>
+        </div>
+        <div style="padding:.5rem 0">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:.2rem"><strong>Venue Issue</strong><span class="bdg bdg-green">Resolved</span></div>
+          <div style="font-size:.7rem;color:var(--dim)">Pre-match · Corner flags repositioned</div>
+        </div>`)}</div>
+    </div>`;
+}
+
+function countersign() {
+  document.getElementById('mainContent').innerHTML = `
+    ${signoffChainHTML()}
+    ${!STATE.reportState.refSubmitted?`<div style="background:var(--amber-dim);border:1px solid rgba(212,146,10,.25);border-radius:6px;padding:.85rem 1rem;font-size:.8rem;color:var(--amber);margin-bottom:.8rem">⏳ Waiting for referee to submit match report.</div>`:''}
+    <div class="g2">
+      <div>${panel("REFEREE'S REPORT",'Read-only',`
+        <div style="background:var(--bg3);border-radius:6px;padding:.85rem;margin-bottom:.75rem;text-align:center">
+          <div style="font-size:.62rem;color:var(--dim);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.8px">Final Score</div>
+          <div style="font-family:var(--font-head);font-size:2.5rem;color:var(--gold);letter-spacing:4px">${STATE.liveH} — ${STATE.liveA}</div>
+          <div style="font-size:.7rem;color:var(--dim);margin-top:.3rem">${STATE.liveMatch?.home_team?.name||'Home'} vs ${STATE.liveMatch?.away_team?.name||'Away'}</div>
+        </div>
+        <div style="font-size:.78rem;color:var(--soft);line-height:1.7;border-top:1px solid var(--border);padding-top:.65rem">
+          ${STATE.reportState.refSubmitted?'Report filed. Match conducted in accordance with KRF regulations.':'Awaiting referee submission.'}
+        </div>
+        <div style="font-size:.7rem;color:var(--dim);margin-top:.5rem">Linesman sign-off: ${STATE.reportState.lineSignedOff?'✓ Signed':'⏳ Pending'}</div>`)}</div>
+      <div>${panel("COMMISSIONER'S NOTES",'Add before countersigning',`
+        <div class="fg"><label>Your Observations</label><textarea id="commNotes" style="min-height:80px" placeholder="Add observations, corrections or notes..."></textarea></div>
+        <div class="fg"><label>Disciplinary Recommendations</label><textarea id="commDisciplinary" placeholder="Any recommended actions..."></textarea></div>
+        <div class="fg"><label>Result Confirmation</label><select id="commResult"><option value="confirmed">Confirm as filed</option><option value="review">Under review</option></select></div>
+        <div class="btn-row">
+          <button class="btn-s countersign" onclick="handleCountersign()" ${!STATE.reportState.lineSignedOff&&!STATE.reportState.refSubmitted?'disabled':''}>✍ COUNTERSIGN</button>
+          <button class="btn-s reject" onclick="showToast('Report returned to referee with notes')">Return with Notes</button>
+        </div>
+        ${STATE.reportState.commCountersigned?`<div style="margin-top:.65rem;padding:.6rem;background:var(--teal-dim);border-radius:5px;font-size:.72rem;color:#2dd4b0">✓ Countersigned and locked. Admin notified.</div>`:''}`)}
+      </div>
+    </div>`;
+}
+
+function handleCountersign() {
+  const notes = document.getElementById('commNotes')?.value || '';
+  const rec   = document.getElementById('commDisciplinary')?.value || '';
+  commCountersign(notes, rec);
+  setTimeout(countersign, 400);
+}
+
+// ─────────────────────────────────────────────
+// ── LINESMAN SCREENS
+// ─────────────────────────────────────────────
+function boundary() {
+  const myEvents = STATE.events.filter(e=>(e.by||e.logged_by_role)==='linesman');
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>
+        ${panel('QUICK LOG','Tap to log',`
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem">
+            ${[['✅','In Play',''],['🚩','Out — Home',STATE.liveMatch?.home_team?.name||'Home'],['🚩','Out — Away',STATE.liveMatch?.away_team?.name||'Away']].map(([i,l,t])=>`
+              <div class="boundary-btn" onclick="logBoundaryCall('${l}','${t}')">
+                <div class="bb-icon">${i}</div><div class="bb-label">${l}</div><div class="bb-sub">${t||'Ball live'}</div>
+              </div>`).join('')}
+          </div>
+          <div style="display:flex;gap:.5rem">
+            ${[['⛔','Offside — Home',STATE.liveMatch?.home_team?.name||'Home'],['⛔','Offside — Away',STATE.liveMatch?.away_team?.name||'Away'],['🔄','Sub Request','']].map(([i,l,t])=>`
+              <div class="boundary-btn" onclick="logBoundaryCall('${l}','${t}')">
+                <div class="bb-icon">${i}</div><div class="bb-label">${l.split(' — ')[0]} ${l.split(' — ')[1]||''}</div><div class="bb-sub">${t||'Change'}</div>
+              </div>`).join('')}
+          </div>`)}
+        ${panel('LIVE SCORE','Monitor',scoreMiniHTML())}
+      </div>
+      <div>${panel('MY CALLS LOG','This match',`
+        <div class="ev-list" id="lineCallsList">${myEvents.length?eventItemsHTML(myEvents):'<div style="padding:.75rem;color:var(--muted);font-size:.78rem">No calls logged yet</div>'}</div>`)}</div>
+    </div>`;
+}
+
+function logBoundaryCall(type, team) {
+  const elapsed = Math.max(1, STATE.period*15 - Math.floor(STATE.matchTimer/60));
+  const icon = type.includes('Offside')?'⛔':type.includes('Sub')?'🔄':'🚩';
+  STATE.events.unshift({ min:elapsed+"'", type:'boundary', icon, desc:`${type}${team?' — '+team:''}`, by:'linesman' });
+  const list = document.getElementById('lineCallsList');
+  if (list) {
+    const myEvents = STATE.events.filter(e=>(e.by||e.logged_by_role)==='linesman');
+    list.innerHTML = eventItemsHTML(myEvents);
+  }
+  showToast(`Logged: ${type}${team?' ('+team+')':''}`);
+}
+
+function lineview() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="live-sb">
+      <div class="lsb-top active-match"><span class="lsb-info">Linesman Monitor · Read-only</span><span class="lsb-period">Q${STATE.period}</span></div>
+      <div class="lsb-teams">
+        <div class="lsb-team"><div class="lsb-tname" style="color:${STATE.liveMatch?.home_team?.color||'var(--red)'}">${(STATE.liveMatch?.home_team?.name||'HOME').toUpperCase()}</div></div>
+        <div class="lsb-center"><div class="lsb-score">${STATE.liveH} <span style="font-size:2rem;color:var(--muted)">—</span> ${STATE.liveA}</div></div>
+        <div class="lsb-team"><div class="lsb-tname" style="color:${STATE.liveMatch?.away_team?.color||'var(--blue)'}">${(STATE.liveMatch?.away_team?.name||'AWAY').toUpperCase()}</div></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div>${panel('ALL EVENTS','Referee + Linesman',`<div class="ev-list" style="max-height:260px">${eventItemsHTML(STATE.events,20)}</div>`)}</div>
+      <div>${panel('LOG BOUNDARY CALL','Quick entry',`
+        <div class="fg"><label>Call Type</label><select><option>Out of Play</option><option>Offside</option><option>Sub Request</option><option>Contested Decision</option></select></div>
+        <div class="fg"><label>Team</label><select><option>${STATE.liveMatch?.home_team?.name||'Home'}</option><option>${STATE.liveMatch?.away_team?.name||'Away'}</option><option>N/A</option></select></div>
+        <div class="fg"><label>Notes</label><input placeholder="Additional detail..."/></div>
+        <div class="btn-row"><button class="btn-p" onclick="showToast('Call logged')">LOG CALL</button></div>`)}</div>
+    </div>`;
+}
+
+function linesign() {
+  document.getElementById('mainContent').innerHTML = `
+    ${signoffChainHTML()}
+    <div class="g2">
+      <div>${panel('EVENT LOG REVIEW','Check before signing',`
+        <div style="font-size:.75rem;color:var(--dim);margin-bottom:.65rem">Review all events. Flag any disputes before signing.</div>
+        <div class="ev-list" style="max-height:240px">${eventItemsHTML(STATE.events,20)}</div>
+        <div class="btn-row" style="margin-top:.65rem">
+          <button class="btn-s sign" onclick="handleLineSign()">✍ SIGN OFF EVENT LOG</button>
+          <button class="btn-s reject" onclick="showToast('Dispute flagged — referee will review')">Flag Dispute</button>
+        </div>
+        ${STATE.reportState.lineSignedOff?`<div style="margin-top:.6rem;padding:.55rem;background:var(--green-dim);border-radius:5px;font-size:.72rem;color:#4cd97b">✓ Signed off. Awaiting commissioner countersign.</div>`:''}`)}
+      </div>
+      <div>${panel('MY CALLS','Submitted by you',`
+        <div class="ev-list">${eventItemsHTML(STATE.events.filter(e=>(e.by||e.logged_by_role)==='linesman'))||'<div style="padding:.5rem;color:var(--muted);font-size:.78rem">No calls</div>'}</div>`)}</div>
+    </div>`;
+}
+
+function handleLineSign() {
+  linemanSign();
+  setTimeout(linesign, 400);
+}
+
+// ─────────────────────────────────────────────
+// ── REGISTRATION
+// ─────────────────────────────────────────────
+function playerreg() {
+  const docs = getCurrentDocs();
+  const done = docs.filter(d=>d.status==='approved'||d.status==='done').length;
+  const pct  = docs.length ? Math.round((done/docs.length)*100) : 0;
+  document.getElementById('mainContent').innerHTML = `
+    <div class="prog-wrap" style="margin-bottom:1rem">
+      <div class="prog-label"><span style="font-size:.8rem;font-weight:500">Registration Progress</span><span style="color:var(--gold);font-weight:600">${pct}%</span></div>
+      <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:.68rem;color:var(--dim);margin-top:.3rem">${done}/${docs.length} documents · Submit anytime — admin flags missing items</div>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="fsec"><div class="fsec-title">Personal Information</div>
+          <div class="fgrid">
+            <div class="fg"><label>Full Name</label><input id="pName" value="${STATE.user?.name||''}" placeholder="As on National ID"/></div>
+            <div class="fg"><label>Date of Birth</label><input type="date" id="pDob"/></div>
+            <div class="fg"><label>National ID Number</label><input id="pNatId" placeholder="8-digit National ID"/></div>
+            <div class="fg"><label>Email Address</label><input type="email" id="pEmail" value="${STATE.user?.email||''}"/></div>
+            <div class="fg"><label>Phone Number</label><input type="tel" id="pPhone" placeholder="+254..."/></div>
+            <div class="fg"><label>County</label>
+              <select id="pCounty"><option>Nairobi</option><option>Mombasa</option><option>Kisumu</option><option>Nakuru</option><option>Eldoret</option><option>Nyeri</option><option>Garissa</option><option>Kakamega</option><option>Machakos</option><option>Embu</option><option>Bungoma</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="fsec"><div class="fsec-title">Playing Details</div>
+          <div class="fgrid">
+            <div class="fg"><label>Team</label>
+              <select id="pTeam">${(STATE.teams||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}</select>
+            </div>
+            <div class="fg"><label>Jersey Number (1–99)</label><input type="number" id="pJersey" min="1" max="99" value="${STATE.user?.jersey_number||''}"/></div>
+            <div class="fg"><label>Position</label>
+              <select id="pPos">
+                <option>Centre Man</option><option>Front Right</option><option>Front Left</option>
+                <option>Winger Right</option><option>Winger Left</option>
+              </select>
+            </div>
+            <div class="fg"><label>Player Status</label>
+              <select id="pStatus"><option>Amateur</option><option>Semi-Professional</option><option>Professional</option></select>
+            </div>
+            <div class="fg"><label>Age Category</label>
+              <select id="pAge"><option>Senior (18+)</option><option>U-23</option><option>U-18</option><option>U-16</option></select>
+            </div>
+            <div class="fg"><label>Dominant Side</label>
+              <select><option>Right</option><option>Left</option><option>Both</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn-p" onclick="handleSaveProfile()">SAVE PROFILE</button>
+          <button class="btn-s" onclick="showToast('Draft saved')">Save Draft</button>
+        </div>
+      </div>
+      <div>
+        <div class="fsec"><div class="fsec-title">Document Uploads</div>
+          ${docsGridHTML(docs)}
+          <div style="margin-top:.75rem;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.65rem;font-size:.7rem;color:var(--dim);line-height:1.7">
+            <strong style="color:var(--soft)">Note:</strong> Submit anytime — admin will flag missing or invalid documents. JPG, PNG, PDF · max 10MB each.
+          </div>
+        </div>
+        <button class="btn-p" style="width:100%" onclick="showToast('Registration submitted! Admin will review within 48hrs.')">SUBMIT REGISTRATION</button>
+      </div>
+    </div>`;
+}
+
+function handleSaveProfile() {
+  const data = {
+    name:           document.getElementById('pName')?.value,
+    phone:          document.getElementById('pPhone')?.value,
+    national_id:    document.getElementById('pNatId')?.value,
+    county:         document.getElementById('pCounty')?.value,
+    position:       document.getElementById('pPos')?.value,
+    jersey_number:  parseInt(document.getElementById('pJersey')?.value),
+    player_status:  document.getElementById('pStatus')?.value,
+    age_category:   document.getElementById('pAge')?.value,
+    team_id:        document.getElementById('pTeam')?.value,
+  };
+  saveProfile(data);
+}
+
+// ─────────────────────────────────────────────
+// ── TEAM REGISTRATION
+// ─────────────────────────────────────────────
+function teamreg() {
+  const done = TEAM_DOCS.filter(d=>d.status==='done'||d.status==='approved').length;
+  const pct  = Math.round((done/TEAM_DOCS.length)*100);
+  document.getElementById('mainContent').innerHTML = `
+    <div class="prog-wrap"><div class="prog-label"><span>Team Registration</span><span style="color:var(--gold);font-weight:600">${pct}%</span></div>
+    <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div></div>
+    <div class="g2">
+      <div>
+        <div class="fsec"><div class="fsec-title">Club Information</div>
+          <div class="fgrid">
+            <div class="fg"><label>Team Name</label><input placeholder="Official registered name"/></div>
+            <div class="fg"><label>Home City / County</label><input placeholder="City or County"/></div>
+            <div class="fg"><label>Manager Full Name</label><input placeholder="Head coach full name"/></div>
+            <div class="fg"><label>Manager Email</label><input type="email" placeholder="manager@team.co.ke"/></div>
+            <div class="fg"><label>Manager Phone</label><input type="tel" placeholder="+254..."/></div>
+            <div class="fg"><label>Manager ID Number</label><input placeholder="National ID"/></div>
+            <div class="fg"><label>Assistant Coach 1</label><input placeholder="Full name"/></div>
+            <div class="fg"><label>Assistant Coach 2</label><input placeholder="Full name"/></div>
+            <div class="fg"><label>Home Ground</label><input placeholder="Stadium or venue name"/></div>
+            <div class="fg"><label>Year Founded</label><input type="number" placeholder="e.g. 2018"/></div>
+            <div class="fg full"><label>Team Description</label><textarea placeholder="Brief club history..."></textarea></div>
+          </div>
+        </div>
+        <button class="btn-p" onclick="showToast('Club info saved!')">SAVE CLUB INFO</button>
+      </div>
+      <div>
+        <div class="fsec"><div class="fsec-title">Required Documents</div>${docsGridHTML(TEAM_DOCS)}</div>
+        <button class="btn-p" style="width:100%" onclick="showToast('Team registration submitted!')">SUBMIT TEAM REGISTRATION</button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ── MY DOCUMENTS
+// ─────────────────────────────────────────────
+function mydocs() {
+  const docs = getCurrentDocs();
+  const done = docs.filter(d=>d.status==='approved'||d.status==='done').length;
+  const pct  = docs.length ? Math.round((done/docs.length)*100) : 0;
+  document.getElementById('mainContent').innerHTML = `
+    <div class="prog-wrap"><div class="prog-label"><span>${done}/${docs.length} documents</span><span style="color:var(--gold);font-weight:600">${pct}%</span></div>
+    <div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div></div>
+    ${panel('MY CLEARANCES','Click any doc to upload or view', docsGridHTML(docs)+`<div class="btn-row" style="margin-top:.75rem"><button class="btn-p" onclick="showToast('Documents submitted!')">SUBMIT ALL DOCS</button></div>`)}`;
+}
+
+// ─────────────────────────────────────────────
+// ── ADMIN PAGES
+// ─────────────────────────────────────────────
+function users() {
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Add user form')">+ ADD USER</button>
+      <button class="btn-s" onclick="showToast('Export CSV')">Export CSV</button>
+    </div>
+    ${panel('ALL USERS','',`<table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Team</th><th>Status</th><th>Docs</th><th>Action</th></tr></thead>
+    <tbody>${[
+      ['John Kamau','admin','Federation HQ','active'],
+      ['Dr. Grace Njoroge','commissioner','Commissioner','active'],
+      ['Peter Omondi','referee','Senior Referee','active'],
+      ['Mary Chebet','linesman','Asst. Referee','active'],
+      ['Sarah Ochieng','official','Score Official','active'],
+      ['Kevin Ochieng','player','Nairobi Bulls','active'],
+      ['Brian Mutua','player','Kisumu Kings','pending'],
+    ].map(u=>`<tr>
+      <td style="font-weight:500">${u[0]}</td>
+      <td><span class="bdg bdg-${u[1]==='admin'?'red':u[1]==='commissioner'?'teal':u[1]==='referee'?'blue':u[1]==='linesman'?'amber':u[1]==='official'?'purple':'green'}">${u[1]}</span></td>
+      <td style="font-size:.75rem;color:var(--dim)">${u[2]}</td>
+      <td><span class="bdg bdg-${u[3]==='active'?'green':'amber'}">${u[3]}</span></td>
+      <td style="font-size:.7rem;color:var(--dim)">—</td>
+      <td style="display:flex;gap:.3rem">
+        <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing ${u[0]}')">Edit</button>
+        <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--green)" onclick="showToast('Approved!')">✓</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`)}`;
+}
+
+function teams_admin() {
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Create team form')">+ ADD TEAM</button>
+      <button class="btn-s" onclick="showToast('Randomly assigning players...')">Assign Players (Random)</button>
+    </div>
+    ${panel('REGISTERED TEAMS','',`<table class="dt"><thead><tr><th>Team</th><th>City</th><th>Manager</th><th>Players</th><th>Docs</th><th>Action</th></tr></thead>
+    <tbody>${(STATE.teams||[]).slice(0,8).map(t=>`<tr>
+      <td><div style="display:flex;align-items:center;gap:.5rem"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0"></div><span style="font-weight:600">${t.name}</span></div></td>
+      <td style="font-size:.75rem;color:var(--dim)">${t.city}</td>
+      <td style="font-size:.75rem">${t.manager?.name||'—'}</td>
+      <td>${t.standings?.[0]?.played||0}</td>
+      <td><span class="bdg bdg-green">OK</span></td>
+      <td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing ${t.name}')">Manage</button></td>
+    </tr>`).join('')}</tbody></table>`)}`;
+}
+
+function tournaments() {
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Create tournament')">+ CREATE</button>
+      <button class="btn-s" onclick="showToast('Import fixtures')">Import Fixtures</button>
+    </div>
+    ${panel('ALL TOURNAMENTS','',`<table class="dt"><thead><tr><th>Name</th><th>Status</th><th>Teams</th><th>Rounds</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td style="font-weight:600">KPL Championship 2025</td><td><span class="bdg bdg-red">● Ongoing</span></td><td>12</td><td>11</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing KPL')">Manage</button></td></tr>
+      <tr><td style="font-weight:600">KRF National Cup</td><td><span class="bdg bdg-red">● Ongoing</span></td><td>16</td><td>5</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing Cup')">Manage</button></td></tr>
+      <tr><td style="font-weight:600">U-23 National League</td><td><span class="bdg bdg-amber">Upcoming</span></td><td>8</td><td>7</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing U23')">Manage</button></td></tr>
+    </tbody></table>`)}`;
+}
+
+function gallery() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>${panel('UPLOAD PHOTOS','',`
+        <div class="upload-zone" onclick="document.getElementById('photoUploadInput').click()">
+          <div class="uz-icon">📷</div><p>Click to upload match photos</p><small>JPG PNG WebP · max 20MB each</small>
+        </div>
+        <input type="file" id="photoUploadInput" accept="image/*" multiple style="display:none" onchange="handleDocUpload(this,'photo')"/>
+        <div class="fgrid" style="margin-top:.65rem">
+          <div class="fg"><label>Album / Match</label><input placeholder="e.g. KPL R9 Match Day"/></div>
+          <div class="fg"><label>Visibility</label><select><option>Public</option><option>Members Only</option></select></div>
+        </div>
+        <button class="btn-p" style="width:100%;margin-top:.5rem" onclick="showToast('Photos uploading...')">UPLOAD PHOTOS</button>`)}</div>
+      <div>${panel('UPLOAD VIDEO','',`
+        <div class="upload-zone" onclick="document.getElementById('videoUploadInput').click()">
+          <div class="uz-icon">🎬</div><p>Highlights, full matches, interviews</p><small>MP4 MOV · max 2GB</small>
+        </div>
+        <input type="file" id="videoUploadInput" accept="video/*" style="display:none" onchange="handleDocUpload(this,'video')"/>
+        <div class="fgrid" style="margin-top:.65rem">
+          <div class="fg"><label>Title</label><input placeholder="Video title..."/></div>
+          <div class="fg"><label>Category</label><select><option>Match Highlights</option><option>Full Match</option><option>Training</option><option>Interview</option></select></div>
+        </div>
+        <button class="btn-p" style="width:100%;margin-top:.5rem" onclick="showToast('Video uploading...')">UPLOAD VIDEO</button>
+        <div style="margin-top:.65rem;padding:.5rem .65rem;background:var(--bg3);border-radius:5px;font-size:.68rem;color:var(--muted)">
+          Live RTMP: <span style="font-family:var(--font-mono);color:var(--gold)">rtmp://stream.krfkenya.co.ke/live</span>
+        </div>`)}</div>
+    </div>`;
+}
+
+function settings() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="g2">
+      <div>${panel('PUBLIC SITE','Hero & display',`
+        <div class="fgrid">
+          <div class="fg full"><label>Hero Background Video URL</label><input id="heroUrl" placeholder="https://cdn.../hero.mp4"/></div>
+          <div class="fg full"><label>Upload New Wallpaper / Video</label>
+            <div class="upload-zone" onclick="document.getElementById('heroUploadInput').click()">
+              <div class="uz-icon">🎬</div><p>Upload hero background</p><small>MP4 · 1920×1080 recommended</small>
+            </div>
+            <input type="file" id="heroUploadInput" accept="video/*,image/*" style="display:none" onchange="handleDocUpload(this,'hero')"/>
+          </div>
+          <div class="fg"><label>Ticker Announcement</label><input placeholder="Live ticker message..."/></div>
+          <div class="fg"><label>Season Label</label><input value="KPL Season 2025"/></div>
+          <div class="fg"><label>Facebook URL</label><input placeholder="https://facebook.com/..."/></div>
+          <div class="fg"><label>Instagram URL</label><input placeholder="https://instagram.com/..."/></div>
+          <div class="fg"><label>YouTube URL</label><input placeholder="https://youtube.com/..."/></div>
+          <div class="fg"><label>Twitter / X URL</label><input placeholder="https://x.com/..."/></div>
+        </div>
+        <button class="btn-p" style="margin-top:.75rem" onclick="showToast('Settings saved!')">SAVE SETTINGS</button>`)}</div>
+      <div>${panel('SPONSORS','Public site',`
+        ${['Safaricom · Title Sponsor','KCB Bank · Gold','Kenya Airways · Gold'].map(s=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:.42rem .6rem;background:var(--bg3);border-radius:5px;font-size:.78rem;margin-bottom:.35rem">
+            <span>${s}</span>
+            <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing sponsor')">Edit</button>
+          </div>`).join('')}
+        <button class="btn-p" style="width:100%;margin-top:.5rem;font-size:.78rem;padding:.5rem" onclick="showToast('Add sponsor form')">+ ADD SPONSOR</button>`)}</div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// ── PLAYER PAGES
+// ─────────────────────────────────────────────
+function profile() {
+  const docs = getCurrentDocs();
+  document.getElementById('mainContent').innerHTML = `
+    <div class="prof-head">
+      <div class="prof-av" style="background:var(--green-dim);color:var(--green);border-color:rgba(39,174,96,.4)">
+        ${STATE.user?.initials||'PL'}
+        <div class="prof-cam" onclick="triggerDocUpload('passport_photo')">📷</div>
+      </div>
+      <div>
+        <div class="pname">${STATE.user?.name||'Player'}</div>
+        <div class="ppos">${STATE.user?.position||'—'} · #${STATE.user?.jersey_number||'—'}</div>
+        <div class="ptags"><span class="bdg bdg-green">Active</span><span class="bdg bdg-gold">KPL 2025</span></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div>
+        <div class="fsec"><div class="fsec-title">Edit Profile</div>
+          <div class="fgrid">
+            <div class="fg"><label>Full Name</label><input id="pName" value="${STATE.user?.name||''}"/></div>
+            <div class="fg"><label>Phone</label><input id="pPhone" value="${STATE.user?.phone||''}"/></div>
+            <div class="fg"><label>Email</label><input value="${STATE.user?.email||''}" readonly/></div>
+            <div class="fg"><label>County</label><input value="${STATE.user?.county||''}"/></div>
+            <div class="fg"><label>Position</label>
+              <select id="pPos"><option>Centre Man</option><option>Front Right</option><option>Front Left</option><option>Winger Right</option><option>Winger Left</option></select>
+            </div>
+            <div class="fg"><label>Jersey #</label><input type="number" id="pJersey" value="${STATE.user?.jersey_number||''}" min="1" max="99"/></div>
+          </div>
+        </div>
+        <button class="btn-p" onclick="handleSaveProfile()">UPDATE PROFILE</button>
+      </div>
+      <div>
+        <div class="fsec"><div class="fsec-title">My Documents</div>${docsGridHTML(docs)}</div>
+      </div>
+    </div>`;
+}
+
+function mystats() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-row">
+      <div class="sc" style="--sc-color:var(--red)"><div class="v">—</div><div class="l">Goals</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">—</div><div class="l">Games</div><div class="ch ch-neu">Played</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">—</div><div class="l">Assists</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--blue)"><div class="v">—</div><div class="l">Rank</div><div class="ch ch-neu">Top scorers</div></div>
+    </div>
+    <div style="padding:2rem;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:8px">
+      <div style="font-size:2rem;opacity:.2;margin-bottom:.75rem">📊</div>
+      <div style="font-size:.85rem;color:var(--dim)">Your stats will appear here once match data is synced from the live system.</div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:.5rem">Stats update automatically after each match is published by admin.</div>
+    </div>`;
+}
+
+function schedule() {
+  const upcoming = (STATE.schedules||[]).filter(m=>m.status==='upcoming');
+  document.getElementById('mainContent').innerHTML = `
+    ${panel('UPCOMING FIXTURES','Your team schedule',
+      upcoming.length ? upcoming.map(s=>{
+        const d = s.match_date ? new Date(s.match_date).toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'}) : 'TBC';
+        const t = s.match_date ? new Date(s.match_date).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) : '';
+        return `<div style="display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid rgba(255,255,255,.03)">
+          <div style="text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.3rem .55rem;min-width:40px;flex-shrink:0">
+            <div style="font-family:var(--font-head);font-size:1.2rem;color:var(--gold);line-height:1">${new Date(s.match_date||Date.now()).getDate()}</div>
+            <div style="font-size:.5rem;color:var(--muted);text-transform:uppercase">${d.split(',')[0]}</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:.83rem;font-weight:600;color:var(--white)">${s.home_team?.name||'TBC'} vs ${s.away_team?.name||'TBC'}</div>
+            <div style="font-size:.7rem;color:var(--dim);margin-top:2px">${t} · ${s.venue||'TBC'} · ${s.tournament?.name||''}</div>
+          </div>
+          <span class="bdg bdg-amber">Upcoming</span>
+        </div>`;
+      }).join('') : '<div style="color:var(--dim);font-size:.78rem;padding:.5rem 0">No upcoming fixtures scheduled</div>'
+    )}`;
+}
+</script>
+
+<script src="js/portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "krf-kenya",
+  "version": "1.0.0",
+  "description": "Kenya Rollball Federation — Official web platform",
+  "private": true,
+  "engines": {
+    "node": ">=18.x"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "busboy": "^1.6.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "name": "krf-kenya",
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" },
+    { "src": "api/*.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/portal", "dest": "/public/portal.html" },
+    { "src": "/uploads/(.*)", "dest": "/uploads/$1" },
+    { "src": "/(.*)", "dest": "/public/$1" }
+  ],
+  "env": {
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_KEY": "@supabase_service_key",
+    "JWT_SECRET": "@jwt_secret"
+  },
+  "headers": [
+    {
+      "source": "/uploads/docs/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/uploads/videos/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000" },
+        { "key": "Accept-Ranges", "value": "bytes" }
+      ]
+    }
+  ]
+}
