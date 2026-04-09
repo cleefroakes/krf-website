@@ -19,16 +19,13 @@
 html{scroll-behavior:smooth}
 body{background:var(--dark);color:var(--white);font-family:var(--font-body);overflow-x:hidden}
 img{display:block;width:100%;height:100%;object-fit:cover}
-/* ─── SCROLLBAR ─── */
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:var(--dark2)}
 ::-webkit-scrollbar-thumb{background:var(--red);border-radius:2px}
-/* ─── VIDEO BG ─── */
 #heroBg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 #heroBg video{width:100%;height:100%;object-fit:cover;opacity:.18}
 #heroBg .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 20%,rgba(8,8,8,.9) 100%)}
 #heroBg .grain{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4}
-/* ─── NAV ─── */
 #mainNav{position:fixed;top:0;left:0;right:0;z-index:200;transition:background .4s,backdrop-filter .4s}
 #mainNav.scrolled{background:rgba(8,8,8,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
 .nav-inner{max-width:1280px;margin:0 auto;padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
@@ -46,30 +43,9 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .nav-live{display:flex;align-items:center;gap:.4rem;font-family:var(--font-ui);font-size:.68rem;font-weight:600;letter-spacing:1.5px;color:var(--red);text-transform:uppercase;margin-right:.5rem}
 .live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:livepulse 1.2s infinite}
 @keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
-/* ─── SECTIONS ─── */
 .page{display:none;position:relative;z-index:10;min-height:100vh;padding-top:64px}
 .page.active{display:block}
 .container{max-width:1280px;margin:0 auto;padding:0 2rem}
-/* ─── LANDING SPLIT ─── */
-#landing{display:none}
-#landing.active{display:flex;flex-direction:column;min-height:100vh;padding-top:64px}
-.split-hero{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:4rem 2rem 2rem}
-.split-hero h1{font-family:var(--font-display);font-size:clamp(3rem,8vw,7rem);letter-spacing:6px;line-height:.9;margin-bottom:1rem}
-.split-hero h1 em{color:var(--gold);font-style:normal;display:block}
-.split-hero p{color:var(--dim);font-size:.95rem;max-width:480px;line-height:1.8;margin-bottom:3rem}
-.split-cards{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;width:100%;max-width:900px}
-.split-card{flex:1;min-width:280px;max-width:380px;position:relative;overflow:hidden;border-radius:6px;cursor:pointer;transition:transform .3s}
-.split-card:hover{transform:translateY(-6px)}
-.split-card .sc-bg{position:absolute;inset:0;background-size:cover;background-position:center}
-.split-card .sc-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9) 0%,rgba(0,0,0,.4) 60%,transparent 100%)}
-.split-card .sc-body{position:relative;padding:2.5rem 1.75rem;min-height:280px;display:flex;flex-direction:column;justify-content:flex-end}
-.split-card h2{font-family:var(--font-display);font-size:2rem;letter-spacing:3px;margin-bottom:.4rem}
-.split-card p{font-size:.82rem;color:rgba(255,255,255,.7);line-height:1.6;margin-bottom:1.25rem}
-.split-card .sc-btn{display:inline-block;background:var(--red);color:#fff;font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1.5px;padding:.55rem 1.25rem;border-radius:2px;text-transform:uppercase;cursor:pointer;transition:background .2s;border:none}
-.split-card.portal .sc-btn{background:var(--gold);color:var(--dark)}
-.split-card:hover .sc-btn{opacity:.85}
-.sc-icon{font-size:2.5rem;margin-bottom:.75rem}
-/* ─── HOME ─── */
 .home-hero{position:relative;min-height:calc(100vh - 64px);display:flex;align-items:flex-end;padding-bottom:4rem;overflow:hidden}
 .home-hero-content{position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:0 2rem;width:100%}
 .home-hero h1{font-family:var(--font-display);font-size:clamp(4rem,10vw,9rem);line-height:.88;letter-spacing:4px;margin-bottom:1.5rem}
@@ -86,20 +62,17 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .btn-outline:hover{border-color:var(--gold);color:var(--gold)}
 .scroll-hint{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);font-size:.65rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:.4rem;animation:bounce 2s infinite}
 @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
-/* ─── LIVE TICKER ─── */
 .live-ticker{background:var(--red);padding:.45rem 0;overflow:hidden;position:relative;z-index:10}
 .ticker-inner{display:flex;align-items:center;gap:3rem;animation:ticker 30s linear infinite;white-space:nowrap}
 @keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.ticker-item{font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap.75rem}
+.ticker-item{font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center}
 .ticker-sep{opacity:.4;margin:0 1rem}
-/* ─── SECTION HEADERS ─── */
 .sec-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:2rem;padding-top:3rem}
 .sec-head h2{font-family:var(--font-display);font-size:clamp(2rem,4vw,3rem);letter-spacing:3px;line-height:1}
 .sec-head h2 em{color:var(--red);font-style:normal}
 .sec-head h2 small{display:block;font-family:var(--font-body);font-size:.75rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-weight:400;margin-bottom:.25rem}
 .sec-link{font-family:var(--font-ui);font-size:.72rem;color:var(--gold);letter-spacing:1px;text-transform:uppercase;cursor:pointer;background:none;border:none;transition:opacity .2s}
 .sec-link:hover{opacity:.7}
-/* ─── TOURNAMENT CARDS ─── */
 .tournament-scroll{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
 .t-card{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:16/9;transition:transform .3s,box-shadow .3s}
 .t-card:hover{transform:scale(1.02);box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -111,7 +84,7 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .t-card:hover .t-card-video{opacity:1}
 .t-card-body{position:absolute;bottom:0;left:0;right:0;padding:1.25rem 1.5rem}
 .t-status{display:inline-block;font-family:var(--font-ui);font-size:.6rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:2px;margin-bottom:.5rem}
-.t-status.live{background:var(--red);color:#fff}
+.t-status.live,.t-status.ongoing{background:var(--red);color:#fff}
 .t-status.upcoming{background:rgba(244,169,0,.2);color:var(--gold);border:1px solid rgba(244,169,0,.3)}
 .t-status.completed{background:rgba(255,255,255,.1);color:var(--dim)}
 .t-card h3{font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;line-height:1;margin-bottom:.35rem}
@@ -119,19 +92,14 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .t-card-meta span{font-size:.68rem;color:rgba(255,255,255,.5);font-family:var(--font-ui);letter-spacing:.5px}
 .t-play-hint{position:absolute;top:.85rem;right:.85rem;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;font-size:.6rem;color:rgba(255,255,255,.6);font-family:var(--font-ui);letter-spacing:1px;text-transform:uppercase;opacity:0;transition:opacity .3s}
 .t-card:hover .t-play-hint{opacity:1}
-/* TOURNAMENT DETAIL BG VIDEO */
 #tournamentBg{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .8s}
 #tournamentBg video{width:100%;height:100%;object-fit:cover}
 #tournamentBg .toverlay{position:absolute;inset:0;background:rgba(5,0,10,.82)}
 #tournamentBg.active{opacity:1}
-/* ─── TEAMS GRID ─── */
 .teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
 .team-card{background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .25s,border-color .25s}
 .team-card:hover{transform:translateY(-4px);border-color:rgba(244,169,0,.4)}
 .team-card-banner{height:120px;position:relative;overflow:hidden}
-.team-card-banner .team-img{width:100%;height:100%;object-fit:cover;opacity:.6;transition:opacity .3s,transform .3s}
-.team-card:hover .team-card-banner .team-img{opacity:.9;transform:scale(1.06)}
-.team-card-banner .team-color-overlay{position:absolute;inset:0}
 .team-card-badge{position:absolute;bottom:-20px;left:1.25rem;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.1rem;border:3px solid var(--dark2);z-index:2}
 .team-card-body{padding:1.5rem 1.25rem 1.25rem}
 .team-card h3{font-family:var(--font-ui);font-size:1rem;font-weight:700;letter-spacing:.5px;margin-bottom:.2rem}
@@ -140,34 +108,10 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .tcs{text-align:center}
 .tcs .v{font-family:var(--font-display);font-size:1.4rem;color:var(--gold);display:block;line-height:1}
 .tcs .l{font-size:.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-/* ─── PLAYER MODAL ─── */
 .overlay-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:800;display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px)}
 .overlay-bg.open{display:flex}
-.player-modal{background:var(--dark2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:780px;max-height:90vh;overflow-y:auto;position:relative}
-.pm-banner{height:220px;position:relative;overflow:hidden}
-.pm-banner-img{width:100%;height:100%;object-fit:cover}
-.pm-banner-overlay{position:absolute;inset:0;background:linear-gradient(to top,var(--dark2) 0%,transparent 60%)}
-.pm-close{position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--white);font-size:1rem;transition:background .2s;z-index:5}
-.pm-close:hover{background:var(--red)}
-.pm-body{padding:1.5rem 2rem 2rem}
-.pm-header{display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:1.5rem}
-.pm-avatar{width:80px;height:80px;border-radius:50%;border:3px solid;object-fit:cover;flex-shrink:0;background:var(--dark3)}
-.pm-avatar-placeholder{width:80px;height:80px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.8rem;flex-shrink:0}
-.pm-name{font-family:var(--font-display);font-size:2rem;letter-spacing:2px;line-height:1;margin-bottom:.25rem}
-.pm-pos{font-size:.75rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem}
-.pm-num{font-family:var(--font-display);font-size:3rem;color:rgba(255,255,255,.08);position:absolute;top:1.5rem;right:2rem;letter-spacing:-2px}
-.pm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.5rem}
-.pm-stat{background:var(--dark3);border-radius:4px;padding:.75rem;text-align:center}
-.pm-stat .v{font-family:var(--font-display);font-size:1.8rem;color:var(--gold);display:block;line-height:1}
-.pm-stat .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
-.pm-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
-.pm-info-row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.82rem}
-.pm-info-row .k{color:var(--muted)}
-.pm-info-row .v2{font-weight:500}
-/* ─── TEAM MODAL ─── */
 .team-modal{background:var(--dark2);border:1px solid var(--border);border-radius:8px;width:100%;max-width:900px;max-height:92vh;overflow-y:auto;position:relative}
 .tm-banner{height:200px;position:relative;overflow:hidden}
-.tm-banner-img{width:100%;height:100%;object-fit:cover;opacity:.5}
 .tm-overlay{position:absolute;inset:0;background:linear-gradient(to top,var(--dark2) 0%,transparent 70%)}
 .tm-head{padding:1.5rem 2rem;display:flex;align-items:center;gap:1.25rem;margin-top:-30px;position:relative;z-index:2}
 .tm-badge-lg{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.5rem;border:3px solid var(--dark2)}
@@ -179,14 +123,8 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .tm-stat .v{font-family:var(--font-display);font-size:1.6rem;color:var(--gold);display:block;line-height:1}
 .tm-stat .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
 .tm-body{padding:1.5rem 2rem 2rem}
-.tm-body h4{font-family:var(--font-ui);font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
-.players-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem}
-.player-chip{background:var(--dark3);border:1px solid var(--border);border-radius:4px;padding:.65rem .75rem;cursor:pointer;transition:border-color .2s,transform .2s;display:flex;align-items:center;gap:.6rem}
-.player-chip:hover{border-color:rgba(244,169,0,.5);transform:translateY(-2px)}
-.pc-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:.75rem;flex-shrink:0}
-.pc-info strong{display:block;font-size:.78rem;font-weight:500}
-.pc-info small{font-size:.65rem;color:var(--muted)}
-/* ─── FIXTURES ─── */
+.pm-close{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--white);font-size:1rem;transition:background .2s;z-index:5}
+.pm-close:hover{background:var(--red)}
 .fixtures-list{display:flex;flex-direction:column;gap:.75rem}
 .fixture-card{background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem;transition:border-color .2s}
 .fixture-card:hover{border-color:rgba(200,16,46,.3)}
@@ -198,7 +136,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .fc-team.home{text-align:left}
 .fc-team.away{text-align:right}
 .fc-team-name{font-family:var(--font-ui);font-size:1.05rem;font-weight:700;letter-spacing:.3px}
-.fc-team-city{font-size:.68rem;color:var(--muted);margin-top:2px}
 .fc-score-wrap{text-align:center;min-width:100px}
 .fc-score{font-family:var(--font-display);font-size:2.5rem;color:var(--gold);letter-spacing:4px;line-height:1}
 .fc-score.live{color:var(--red);animation:livepulse 1.5s infinite}
@@ -207,8 +144,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .fc-badge.live{color:var(--red);font-weight:700}
 .fc-badge.upcoming{color:var(--muted)}
 .fc-badge.completed{color:var(--dim)}
-.fc-countdown{font-size:.7rem;color:var(--gold);font-family:var(--font-ui);letter-spacing:.5px;margin-top:.2rem}
-/* ─── STANDINGS TABLE ─── */
 .standings-table{width:100%;border-collapse:collapse}
 .standings-table th{text-align:left;padding:.6rem .85rem;font-family:var(--font-ui);font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border)}
 .standings-table td{padding:.7rem .85rem;border-bottom:1px solid rgba(255,255,255,.03);font-size:.85rem}
@@ -221,7 +156,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .fb.w{background:rgba(39,174,96,.2);color:#27ae60}
 .fb.l{background:rgba(200,16,46,.2);color:var(--red)}
 .fb.d{background:rgba(136,136,136,.15);color:var(--muted)}
-/* ─── NEWS ─── */
 .news-grid{display:grid;grid-template-columns:2fr 1fr;gap:1.25rem}
 @media(max-width:768px){.news-grid{grid-template-columns:1fr}}
 .news-featured{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:16/7;cursor:pointer}
@@ -238,23 +172,28 @@ img{display:block;width:100%;height:100%;object-fit:cover}
 .ni-tag{font-family:var(--font-ui);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-bottom:.3rem}
 .ni-title{font-size:.85rem;font-weight:500;line-height:1.4;margin-bottom:.25rem}
 .ni-meta{font-size:.68rem;color:var(--muted)}
-/* ─── PHOTO GALLERY ─── */
 .gallery-masonry{columns:4;gap:.6rem;column-gap:.6rem}
 @media(max-width:900px){.gallery-masonry{columns:3}}
 @media(max-width:600px){.gallery-masonry{columns:2}}
 .gallery-tile{break-inside:avoid;margin-bottom:.6rem;border-radius:4px;overflow:hidden;cursor:pointer;position:relative}
 .gallery-tile-inner{background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--border);transition:transform .3s}
 .gallery-tile:hover .gallery-tile-inner{transform:scale(1.03)}
-.gallery-tile-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .3s;display:flex;align-items:center;justify-content:center}
+.gallery-tile-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .3s}
 .gallery-tile:hover .gallery-tile-overlay{background:rgba(200,16,46,.2)}
-/* ─── SPONSORS ─── */
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem}
+.video-tile{background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;cursor:pointer;transition:transform .25s,border-color .25s}
+.video-tile:hover{transform:translateY(-4px);border-color:rgba(200,16,46,.3)}
+.video-thumb{aspect-ratio:16/9;background:var(--dark3);display:flex;align-items:center;justify-content:center;font-size:2.5rem;position:relative;overflow:hidden}
+.play-icon{position:absolute;width:48px;height:48px;background:rgba(200,16,46,.8);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s}
+.video-tile:hover .play-icon{transform:scale(1.1)}
+.video-info{padding:.85rem 1rem}
+.video-info h4{font-family:var(--font-ui);font-size:.85rem;font-weight:600;margin-bottom:.2rem}
+.video-info small{font-size:.68rem;color:var(--muted)}
 .sponsors-section{padding:3rem 0;border-top:1px solid var(--border)}
 .sponsors-label{font-family:var(--font-ui);font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:1.75rem}
 .sponsors-row{display:flex;align-items:center;justify-content:center;gap:2.5rem;flex-wrap:wrap}
 .sponsor-logo{background:var(--dark2);border:1px solid var(--border);border-radius:4px;padding:.85rem 2rem;font-family:var(--font-display);font-size:1.2rem;letter-spacing:2px;cursor:pointer;transition:border-color .2s,transform .2s}
 .sponsor-logo:hover{border-color:var(--gold);transform:translateY(-2px)}
-.sponsor-logo.title{border-color:rgba(244,169,0,.3);font-size:1.5rem}
-/* ─── FOOTER ─── */
 footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2rem 2rem;margin-top:4rem}
 .footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2rem}
 @media(max-width:768px){.footer-inner{grid-template-columns:1fr 1fr}}
@@ -269,22 +208,22 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
 .social-icons{display:flex;gap:.5rem}
 .soc{width:32px;height:32px;background:var(--dark3);border:1px solid var(--border);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.75rem;cursor:pointer;transition:border-color .2s,background .2s}
 .soc:hover{border-color:var(--gold);background:rgba(244,169,0,.08)}
-/* ─── TABS ─── */
 .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;scrollbar-width:none}
 .tab{background:none;border:none;color:var(--muted);font-family:var(--font-ui);font-size:.72rem;font-weight:600;padding:.65rem 1.1rem;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s}
 .tab.active{color:var(--white);border-bottom-color:var(--red)}
 .tab:hover:not(.active){color:var(--dim)}
-/* ─── TOAST ─── */
 .toast{position:fixed;bottom:2rem;right:2rem;background:var(--dark2);border:1px solid var(--gold);border-left:3px solid var(--gold);color:var(--white);padding:.8rem 1.3rem;border-radius:4px;font-size:.82rem;z-index:999;transform:translateY(20px);opacity:0;transition:all .35s;pointer-events:none;font-family:var(--font-body)}
 .toast.show{transform:translateY(0);opacity:1}
-/* ─── RESPONSIVE ─── */
+.empty-state{text-align:center;padding:5rem 2rem;color:var(--muted)}
+.empty-state .es-icon{font-size:3rem;margin-bottom:1rem;opacity:.4}
+.empty-state h3{font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;margin-bottom:.5rem;color:var(--dim)}
+.empty-state p{font-size:.82rem;line-height:1.7;max-width:360px;margin:0 auto}
+.tournament-detail-box{background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:2rem;margin-top:1.5rem}
 @media(max-width:768px){
   .nav-links{display:none}
   .home-hero h1{font-size:3.5rem}
-  .pm-stats{grid-template-columns:repeat(2,1fr)}
   .footer-inner{grid-template-columns:1fr}
   .container{padding:0 1rem}
-  .split-cards{flex-direction:column;align-items:center}
   .tournament-scroll{grid-template-columns:1fr}
   .teams-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 }
@@ -294,9 +233,7 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
 
 <!-- VIDEO HERO BACKGROUND -->
 <div id="heroBg">
-  <video id="heroBgVideo" autoplay muted loop playsinline>
-    <source src="" type="video/mp4"/>
-  </video>
+  <video id="heroBgVideo" autoplay muted loop playsinline><source src="" type="video/mp4"/></video>
   <canvas id="particleCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
   <div class="vignette"></div>
   <div class="grain"></div>
@@ -315,13 +252,13 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
       <span class="flag">🇰🇪</span> KRF <em>KENYA</em>
     </div>
     <div class="nav-links">
-      <button class="nav-btn active" onclick="showPage('home',this)">Home</button>
-      <button class="nav-btn" onclick="showPage('tournaments',this)">Tournaments</button>
-      <button class="nav-btn" onclick="showPage('fixtures',this)">Fixtures</button>
-      <button class="nav-btn" onclick="showPage('teams',this)">Teams</button>
-      <button class="nav-btn" onclick="showPage('standings',this)">Standings</button>
-      <button class="nav-btn" onclick="showPage('news',this)">News</button>
-      <button class="nav-btn" onclick="showPage('gallery',this)">Gallery</button>
+      <button class="nav-btn active" data-page="home" onclick="showPage('home',this)">Home</button>
+      <button class="nav-btn" data-page="tournaments" onclick="showPage('tournaments',this)">Tournaments</button>
+      <button class="nav-btn" data-page="fixtures" onclick="showPage('fixtures',this)">Fixtures</button>
+      <button class="nav-btn" data-page="teams" onclick="showPage('teams',this)">Teams</button>
+      <button class="nav-btn" data-page="standings" onclick="showPage('standings',this)">Standings</button>
+      <button class="nav-btn" data-page="news" onclick="showPage('news',this)">News</button>
+      <button class="nav-btn" data-page="gallery" onclick="showPage('gallery',this)">Gallery</button>
     </div>
     <div style="display:flex;align-items:center">
       <div class="nav-live"><div class="live-dot"></div>Live</div>
@@ -332,49 +269,43 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
 
 <!-- LIVE TICKER -->
 <div class="live-ticker" style="position:fixed;top:64px;left:0;right:0;z-index:150">
-  <div class="ticker-inner" id="tickerInner"></div>
+  <div class="ticker-inner" id="tickerInner"><span class="ticker-item">Welcome to Kenya Rollball Federation — Official Site</span></div>
 </div>
 
-<!-- LANDING SPLIT -->
+<!-- ═══════════════════════════════════════════════ -->
+<!-- LANDING PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
 <div id="landing" class="page" style="display:none;padding-top:64px">
   <div style="min-height:calc(100vh - 64px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center">
     <div style="margin-bottom:.5rem;font-family:var(--font-ui);font-size:.7rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase">Welcome to</div>
     <h1 style="font-family:var(--font-display);font-size:clamp(3rem,8vw,6.5rem);letter-spacing:5px;line-height:.9;margin-bottom:.75rem">KENYA<br/><span style="color:var(--gold)">ROLLBALL</span><br/>FEDERATION</h1>
     <p style="color:var(--muted);font-size:.9rem;max-width:440px;line-height:1.8;margin-bottom:3.5rem">Official home of rollball in Kenya. Where do you want to go?</p>
-    <div class="split-cards">
-      <div class="split-card" onclick="showPage('home')">
-        <div class="sc-bg" style="background:linear-gradient(135deg,#1a0008,#0d0d0d)"></div>
-        <div class="sc-overlay"></div>
-        <div class="sc-body">
-          <div class="sc-icon">🌍</div>
-          <h2>PUBLIC SITE</h2>
-          <p>Fixtures, standings, teams, news, live scores and tournament info. No login required.</p>
-          <span class="sc-btn">View Public Site →</span>
-        </div>
+    <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;width:100%;max-width:800px">
+      <div onclick="showPage('home')" style="flex:1;min-width:280px;max-width:360px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:2.5rem 2rem;cursor:pointer;transition:border-color .2s,transform .2s" onmouseover="this.style.borderColor='rgba(200,16,46,.5)';this.style.transform='translateY(-4px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🌍</div>
+        <h2 style="font-family:var(--font-display);font-size:2rem;letter-spacing:3px;margin-bottom:.5rem">PUBLIC SITE</h2>
+        <p style="font-size:.82rem;color:var(--dim);line-height:1.6;margin-bottom:1.5rem">Fixtures, standings, teams, news, live scores and tournament info. No login required.</p>
+        <span style="display:inline-block;background:var(--red);color:#fff;font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1.5px;padding:.55rem 1.25rem;border-radius:2px;text-transform:uppercase">View Public Site →</span>
       </div>
-      <div class="split-card portal" onclick="showToast('Player Portal coming soon — check back!')">
-        <div class="sc-bg" style="background:linear-gradient(135deg,#0a1a00,#0d0d0d)"></div>
-        <div class="sc-overlay"></div>
-        <div class="sc-body">
-          <div class="sc-icon">🔐</div>
-          <h2>PLAYER PORTAL</h2>
-          <p>Login for players, officials and admins. Register, manage scores, view schedules and personal stats.</p>
-          <span class="sc-btn">Enter Portal →</span>
-        </div>
+      <div onclick="showToast('Player Portal coming soon — check back!')" style="flex:1;min-width:280px;max-width:360px;background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:2.5rem 2rem;cursor:pointer;transition:border-color .2s,transform .2s" onmouseover="this.style.borderColor='rgba(244,169,0,.5)';this.style.transform='translateY(-4px)'" onmouseout="this.style.borderColor='var(--border)';this.style.transform='none'">
+        <div style="font-size:2.5rem;margin-bottom:1rem">🔐</div>
+        <h2 style="font-family:var(--font-display);font-size:2rem;letter-spacing:3px;margin-bottom:.5rem">PLAYER PORTAL</h2>
+        <p style="font-size:.82rem;color:var(--dim);line-height:1.6;margin-bottom:1.5rem">Login for players, officials and admins. Register, manage scores, view schedules and personal stats.</p>
+        <span style="display:inline-block;background:var(--gold);color:var(--dark);font-family:var(--font-ui);font-size:.72rem;font-weight:600;letter-spacing:1.5px;padding:.55rem 1.25rem;border-radius:2px;text-transform:uppercase">Enter Portal →</span>
       </div>
     </div>
     <div style="margin-top:2rem;font-size:.72rem;color:var(--muted)">🇰🇪 Kenya Rollball Federation · Est. 2018</div>
   </div>
 </div>
 
-<!-- HOME -->
+<!-- ═══════════════════════════════════════════════ -->
+<!-- HOME PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
 <div id="home" class="page active" style="padding-top:88px">
   <div class="home-hero">
     <div class="home-hero-content">
       <div style="font-family:var(--font-ui);font-size:.7rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:1rem">🇰🇪 Official Federation</div>
-      <h1 class="home-hero-h1">
-        KENYA<span class="line2">ROLLBALL</span><span class="line3">FEDERATION</span>
-      </h1>
+      <h1 class="home-hero-h1">KENYA<span class="line2">ROLLBALL</span><span class="line3">FEDERATION</span></h1>
       <div class="hero-meta">
         <div class="hero-stat"><span class="val">12</span><span class="lbl">Teams</span></div>
         <div class="hero-stat"><span class="val">186</span><span class="lbl">Players</span></div>
@@ -389,53 +320,203 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
     </div>
     <div class="scroll-hint">↓ scroll</div>
   </div>
-  <!-- LIVE MATCH STRIP -->
-  <div style="background:rgba(200,16,46,.08);border-top:1px solid rgba(200,16,46,.2);border-bottom:1px solid rgba(200,16,46,.2);padding:.85rem 0">
+
+  <!-- LIVE STRIP -->
+  <div id="liveStrip" style="background:rgba(200,16,46,.08);border-top:1px solid rgba(200,16,46,.2);border-bottom:1px solid rgba(200,16,46,.2);padding:.85rem 0;display:none">
     <div class="container">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
-        <div style="display:flex;align-items:center;gap.5rem">
+        <div style="display:flex;align-items:center">
           <div class="nav-live" style="margin-right:.75rem"><div class="live-dot"></div>Live Now</div>
-          <span style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px">KPL Championship · Round 9 · Q3</span>
+          <span data-tour style="font-family:var(--font-ui);font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px"></span>
         </div>
         <div style="display:flex;align-items:center;gap:2rem">
-          <span style="font-family:var(--font-ui);font-size:.95rem;font-weight:700">Nairobi Bulls</span>
-          <span id="liveScoreBig" style="font-family:var(--font-display);font-size:2rem;color:var(--gold);letter-spacing:3px">7 — 5</span>
-          <span style="font-family:var(--font-ui);font-size:.95rem;font-weight:700">Mombasa Sharks</span>
+          <span data-home style="font-family:var(--font-ui);font-size:.95rem;font-weight:700"></span>
+          <span data-live-score style="font-family:var(--font-display);font-size:2rem;color:var(--gold);letter-spacing:3px">0 — 0</span>
+          <span data-away style="font-family:var(--font-ui);font-size:.95rem;font-weight:700"></span>
         </div>
         <button class="btn-primary" style="font-size:.68rem;padding:.45rem 1rem" onclick="showPage('fixtures')">Full Scorecard →</button>
       </div>
     </div>
   </div>
+
   <div class="container">
-    <!-- FEATURED TOURNAMENTS -->
     <div class="sec-head">
       <h2><small>Currently Active</small>FEATURED <em>TOURNAMENTS</em></h2>
       <button class="sec-link" onclick="showPage('tournaments')">All Tournaments →</button>
     </div>
-    <div class="tournament-scroll" id="homeTournaments"></div>
-    <!-- TOP STANDINGS -->
+    <div class="tournament-scroll" id="homeTournaments">
+      <div class="empty-state"><div class="es-icon">🏆</div><h3>NO ACTIVE TOURNAMENTS</h3><p>Check back soon for upcoming tournaments</p></div>
+    </div>
+
     <div class="sec-head">
       <h2><small>KPL Championship 2025</small>LEAGUE <em>TABLE</em></h2>
       <button class="sec-link" onclick="showPage('standings')">Full Table →</button>
     </div>
     <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:1rem">
-      <table class="standings-table" id="homeStandings"></table>
+      <table class="standings-table">
+        <thead><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+        <tbody id="homeStandingsBody"><tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No standings data yet</td></tr></tbody>
+      </table>
     </div>
-    <!-- LATEST NEWS -->
+
+    <div class="sec-head">
+      <h2><small>Latest Results</small>RECENT <em>MATCHES</em></h2>
+      <button class="sec-link" onclick="showPage('fixtures')">All Fixtures →</button>
+    </div>
+    <div id="homeResults" class="fixtures-list">
+      <div class="empty-state"><div class="es-icon">⚽</div><h3>NO RESULTS YET</h3><p>Match results will appear here once games are played</p></div>
+    </div>
+
     <div class="sec-head">
       <h2><small>Federation</small>LATEST <em>NEWS</em></h2>
       <button class="sec-link" onclick="showPage('news')">All News →</button>
     </div>
-    <div class="news-grid" id="homeNews"></div>
-    <!-- SPONSORS -->
+    <div id="homeNews">
+      <div class="empty-state"><div class="es-icon">📰</div><h3>NO NEWS YET</h3><p>Federation news and updates will appear here</p></div>
+    </div>
+
     <div class="sponsors-section">
       <div class="sponsors-label">Our Partners & Sponsors</div>
-      <div class="sponsors-row" id="homeSponsors"></div>
+      <div class="sponsors-row" id="homeSponsors">
+        <div class="sponsor-logo">SPONSOR ONE</div>
+        <div class="sponsor-logo title">TITLE PARTNER</div>
+        <div class="sponsor-logo">SPONSOR TWO</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- All other pages (tournaments, fixtures, teams, standings, news, gallery) continue exactly as you provided earlier -->
+<!-- ═══════════════════════════════════════════════ -->
+<!-- TOURNAMENTS PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="tournaments" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>KRF</small>ALL <em>TOURNAMENTS</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterTournaments('all',this)">All</button>
+      <button class="tab" onclick="filterTournaments('ongoing',this)">Live</button>
+      <button class="tab" onclick="filterTournaments('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterTournaments('completed',this)">Completed</button>
+    </div>
+    <div class="tournament-scroll" id="allTournaments">
+      <div class="empty-state"><div class="es-icon">🏆</div><h3>NO TOURNAMENTS YET</h3><p>Tournaments will appear here once they are added to the system</p></div>
+    </div>
+    <div id="tournamentDetail" style="display:none">
+      <div class="tournament-detail-box" id="tournamentDetailBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- FIXTURES PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="fixtures" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>Schedule & Results</small>FIXTURES <em>& RESULTS</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterFixtures('all',this)">All</button>
+      <button class="tab" onclick="filterFixtures('live',this)">Live</button>
+      <button class="tab" onclick="filterFixtures('upcoming',this)">Upcoming</button>
+      <button class="tab" onclick="filterFixtures('completed',this)">Results</button>
+    </div>
+    <div class="fixtures-list" id="fixturesList">
+      <div class="empty-state"><div class="es-icon">📅</div><h3>NO FIXTURES YET</h3><p>Match fixtures and results will appear here once the season begins</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- TEAMS PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="teams" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>KRF Registered</small>ALL <em>TEAMS</em></h2>
+    </div>
+    <div class="teams-grid" id="teamsGrid">
+      <div class="empty-state"><div class="es-icon">👕</div><h3>NO TEAMS YET</h3><p>Registered teams will appear here once added to the system</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- STANDINGS PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="standings" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>Current Season</small>LEAGUE <em>TABLE</em></h2>
+    </div>
+    <div class="tabs" id="standingsTabs">
+      <button class="tab active" onclick="filterStandings(null,this)">All Tournaments</button>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th>
+            <th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th>Form</th>
+          </tr>
+        </thead>
+        <tbody id="standingsBody">
+          <tr><td colspan="11" style="text-align:center;padding:3rem;color:var(--muted)">No standings data yet — add tournaments and matches to get started</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- NEWS PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="news" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>Federation</small>LATEST <em>NEWS</em></h2>
+    </div>
+    <div id="newsGrid">
+      <div class="empty-state"><div class="es-icon">📰</div><h3>NO NEWS YET</h3><p>Federation news, match reports and updates will appear here</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- GALLERY PAGE -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="gallery" class="page" style="display:none;padding-top:108px">
+  <div class="container">
+    <div class="sec-head">
+      <h2><small>KRF</small>PHOTO <em>& VIDEO</em></h2>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="setGalleryTab('photos',this)">Photos</button>
+      <button class="tab" onclick="setGalleryTab('videos',this)">Videos</button>
+    </div>
+    <div id="photosPanel">
+      <div class="gallery-masonry" id="galleryGrid">
+        <div class="empty-state" style="columns:unset"><div class="es-icon">📸</div><h3>NO PHOTOS YET</h3><p>Match photos and event images will appear here</p></div>
+      </div>
+    </div>
+    <div id="videosPanel" style="display:none">
+      <div class="video-grid" id="videoGrid">
+        <div class="empty-state"><div class="es-icon">🎬</div><h3>NO VIDEOS YET</h3><p>Match highlights and videos will appear here</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- TEAM MODAL -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="overlay-bg" id="teamModal">
+  <div class="team-modal">
+    <div id="teamModalBody"></div>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <footer>
@@ -457,13 +538,13 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
       <a onclick="showPage('news')">News</a>
       <a onclick="showPage('gallery')">Gallery</a>
       <a onclick="showToast('YouTube channel coming soon')">Videos</a>
-      <a onclick="showToast('Press releases')">Press</a>
+      <a onclick="showToast('Press releases coming soon')">Press</a>
     </div>
     <div class="footer-col">
       <h4>Federation</h4>
       <a onclick="showPage('landing')">Player Portal</a>
-      <a onclick="showToast('About KRF')">About KRF</a>
-      <a onclick="showToast('Contact form')">Contact</a>
+      <a onclick="showToast('About KRF coming soon')">About KRF</a>
+      <a onclick="showToast('Contact form coming soon')">Contact</a>
       <a onclick="showToast('Become a sponsor')">Sponsors</a>
     </div>
   </div>
@@ -481,28 +562,22 @@ footer{background:var(--dark2);border-top:1px solid var(--border);padding:3rem 2
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/public.js"></script>
+
 <script>
-// Your full JavaScript from the original file (I kept it exactly as you pasted it)
-const TEAMS = [ /* your TEAMS array */ ];
-const TOURNAMENTS = [ /* your TOURNAMENTS array */ ];
-const MATCHES = [ /* your MATCHES array */ ];
-const NEWS = [ /* your NEWS array */ ];
-const SPONSORS = [ /* your SPONSORS array */ ];
-const FORMS = [ /* your FORMS array */ ];
-const GALLERY_EMOJIS = [ /* your GALLERY_EMOJIS array */ ];
+// Scroll nav effect
+window.addEventListener('scroll', () => {
+  document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 20);
+});
 
-// All your functions (showPage, renderHome, renderTournaments, renderFixtures, etc.) remain exactly as you had them
-
-// Init
-initParticles();
-initTicker();
-renderHome();
-renderFixtures();
-renderTeams();
-renderStandings();
-renderNews();
-renderGallery();
-renderTournaments();
+// Close modals on backdrop click
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.overlay-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) closeModals(); });
+  });
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModals(); });
 </script>
 </body>
 </html>
