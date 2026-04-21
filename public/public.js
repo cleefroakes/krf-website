@@ -5,9 +5,9 @@
 // CONFIG — replace with your actual values after Supabase setup
 // ─────────────────────────────────────────────────────────
 const CONFIG = {
-  SUPABASE_URL:      window.ENV_SUPABASE_URL      || 'https://eseffwgiogcbwnatrssz.supabase.co',
-  SUPABASE_ANON_KEY: window.ENV_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzZWZmd2dpb2djYnduYXRyc3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzU0NzQsImV4cCI6MjA5MTA1MTQ3NH0.Qvf3AJJD2rr_fVasvB2ntE0_-LIfSiawEWTnQBKIXmg',
-  API_BASE:          window.ENV_API_BASE           || '/api',
+  SUPABASE_URL: 'https://eseffwgiogcbwnatrssz.supabase.co',
+  SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzZWZmd2dpb2djYnduYXRyc3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzU0NzQsImV4cCI6MjA5MTA1MTQ3NH0.Qvf3AJJD2rr_fVasvB2ntE0_-LIfSiawEWTnQBKIXmg',
+  API_BASE:'/api',
 };
 
 // ─────────────────────────────────────────────────────────
