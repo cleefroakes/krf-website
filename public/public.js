@@ -16,6 +16,7 @@ const CONFIG = {
 let sb = null;
 function initSupabase() {
   if (window.supabase && CONFIG.SUPABASE_URL) {
+    console.log('Supabase URL:',Config.SUPABASE_URL);
     sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     initRealtime();
   }
