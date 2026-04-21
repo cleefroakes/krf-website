@@ -15,7 +15,7 @@ const CONFIG = {
 // ─────────────────────────────────────────────────────────
 let sb = null;
 function initSupabase() {
-  if (window.supabase && CONFIG.SUPABASE_URL !== 'https://eseffwgiogcbwnatrssz.supabase.co') {
+  if (window.supabase && CONFIG.SUPABASE_URL) {
     sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     initRealtime();
   }
