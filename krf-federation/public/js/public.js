@@ -5,9 +5,9 @@
 // CONFIG — replace with your actual values after Supabase setup
 // ─────────────────────────────────────────────────────────
 const CONFIG = {
-  SUPABASE_URL:      window.ENV_SUPABASE_URL      || 'https://YOUR_PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: window.ENV_SUPABASE_ANON_KEY || 'YOUR_ANON_KEY',
-  API_BASE:          window.ENV_API_BASE           || '/api',
+  SUPABASE_URL: 'https://eseffwgiogcbwnatrssz.supabase.co',
+  SUPABASE_ANON_KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzZWZmd2dpb2djYnduYXRyc3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzU0NzQsImV4cCI6MjA5MTA1MTQ3NH0.Qvf3AJJD2rr_fVasvB2ntE0_-LIfSiawEWTnQBKIXmg',
+  API_BASE:'/api',
 };
 
 // ─────────────────────────────────────────────────────────
@@ -15,7 +15,8 @@ const CONFIG = {
 // ─────────────────────────────────────────────────────────
 let sb = null;
 function initSupabase() {
-  if (window.supabase && CONFIG.SUPABASE_URL !== 'https://YOUR_PROJECT.supabase.co') {
+  if (window.supabase && CONFIG.SUPABASE_URL) {
+    console.log('Supabase URL:',Config.SUPABASE_URL);
     sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     initRealtime();
   }
@@ -36,11 +37,33 @@ const STATE = {
 // API HELPERS
 // ─────────────────────────────────────────────────────────
 async function api(resource, params = {}) {
-  const qs = new URLSearchParams({ resource, ...params }).toString();
+  if (!sb) return null;
   try {
-    const res = await fetch(`${CONFIG.API_BASE}/data?${qs}`);
-    if (!res.ok) return null;
-    return await res.json();
+    if (resource === 'teams') {
+      const { data } = await sb.from('teams').select('*, standings(*)').eq('is_active', true).order('name');
+      return data;
+    }
+    if (resource === 'tournaments') {
+      const { data } = await sb.from('tournaments').select('*, tournament_teams(team:teams(id,name,abbr,color))').order('created_at', { ascending: false });
+      return data;
+    }
+    if (resource === 'news') {
+      const { data } = await sb.from('news').select('*').eq('published', true).order('created_at', { ascending: false }).limit(10);
+      return data;
+    }
+    if (resource === 'sponsors') {
+      const { data } = await sb.from('sponsors').select('*').eq('is_active', true);
+      return data;
+    }
+    if (resource === 'settings') {
+      const { data } = await sb.from('site_settings').select('*');
+      return data;
+    }
+    if (resource === 'media') {
+      const { data } = await sb.from('media').select('*').eq('approved', true).eq('media_type', params.type || 'photo').limit(parseInt(params.limit) || 40);
+      return data;
+    }
+    return null;
   } catch { return null; }
 }
 
