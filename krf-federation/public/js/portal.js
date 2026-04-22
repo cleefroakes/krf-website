@@ -5,8 +5,8 @@
 // CONFIG
 // ─────────────────────────────────────────────────────────
 const CONFIG = {
-  SUPABASE_URL:      window.ENV_SUPABASE_URL      || 'https://YOUR_PROJECT.supabase.co',
-  SUPABASE_ANON_KEY: window.ENV_SUPABASE_ANON_KEY || 'YOUR_ANON_KEY',
+  SUPABASE_URL:      window.ENV_SUPABASE_URL      || 'https://eseffwgiogcbwnatrssz.supabase.co',
+  SUPABASE_ANON_KEY: window.ENV_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzZWZmd2dpb2djYnduYXRyc3N6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0NzU0NzQsImV4cCI6MjA5MTA1MTQ3NH0.Qvf3AJJD2rr_fVasvB2ntE0_-LIfSiawEWTnQBKIXmg',
   API_BASE:          window.ENV_API_BASE           || '/api',
 };
 
@@ -96,16 +96,12 @@ async function doLogin() {
   if (!email || !pass) { showToast('Please enter your credentials'); return; }
 
   showToast('Signing in...');
-  const result = await api('auth', { action: 'login' }, 'POST', { email, password: pass });
+  const { data, error } = await STATE.sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { showToast(error.message); return; }
 
-  if (result?.token) {
-    STATE.token = result.token;
-    STATE.user  = result.user;
-    localStorage.setItem('krf_token', result.token);
-    bootPortal();
-  } else {
-    showToast(result?.error || 'Login failed. Check your credentials.');
-  }
+  const { data: profile } = await STATE.sb.from('users').select('*').eq('id', data.user.id).single();
+  STATE.user = profile || { id: data.user.id, name: data.user.user_metadata?.name || email.split('@')[0], role: 'player', email };
+  bootPortal();
 }
 
 async function doRegister() {
@@ -113,30 +109,29 @@ async function doRegister() {
   const email    = document.getElementById('regEmail')?.value?.trim();
   const password = document.getElementById('regPass')?.value;
   if (!name || !email || !password) { showToast('Fill in all fields'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters'); return; }
 
-  const result = await api('auth', { action: 'register' }, 'POST', { name, email, password, role: 'player' });
-  if (result?.token) {
-    STATE.token = result.token; STATE.user = result.user;
-    localStorage.setItem('krf_token', result.token);
-    showToast('Welcome! Complete your registration.');
-    bootPortal();
-  } else {
-    showToast(result?.error || 'Registration failed');
-  }
+  showToast('Creating account...');
+  const { data, error } = await STATE.sb.auth.signUp({ email, password, options: { data: { name } } });
+  if (error) { showToast(error.message); return; }
+
+  await STATE.sb.from('users').insert({ id: data.user.id, name, email, role: 'player', docs_status: 'incomplete', is_active: false });
+  STATE.user = { id: data.user.id, name, email, role: 'player' };
+  showToast('Welcome! Complete your registration.');
+  bootPortal();
 }
 
 async function checkSavedSession() {
-  const saved = localStorage.getItem('krf_token');
-  if (!saved) return;
-  STATE.token = saved;
-  const result = await api('auth', { action: 'me' });
-  if (result?.user) { STATE.user = result.user; bootPortal(); }
-  else { localStorage.removeItem('krf_token'); }
+  const { data: { session } } = await STATE.sb.auth.getSession();
+  if (!session?.user) return;
+  const { data: profile } = await STATE.sb.from('users').select('*').eq('id', session.user.id).single();
+  STATE.user = profile || { id: session.user.id, name: session.user.user_metadata?.name || 'User', role: 'player', email: session.user.email };
+  bootPortal();
 }
 
 function doLogout() {
-  STATE.token = null; STATE.user = null;
-  localStorage.removeItem('krf_token');
+  STATE.sb.auth.signOut();
+  STATE.user = null;
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('app').classList.remove('show');
 }
