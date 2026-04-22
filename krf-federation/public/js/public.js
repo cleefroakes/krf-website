@@ -68,11 +68,17 @@ async function api(resource, params = {}) {
 }
 
 async function apiMatches(action, params = {}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
+  if (!sb) return null;
   try {
-    const res = await fetch(`${CONFIG.API_BASE}/matches?${qs}`);
-    if (!res.ok) return null;
-    return await res.json();
+    if (action === 'list') {
+      const { data } = await sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)').order('match_date', { ascending: false }).limit(parseInt(params.limit) || 20);
+      return data;
+    }
+    if (action === 'standings') {
+      const { data } = await sb.from('standings').select('*, team:teams(id,name,abbr,color)').eq('tournament_id', params.tournament_id).order('points', { ascending: false });
+      return data;
+    }
+    return null;
   } catch { return null; }
 }
 
