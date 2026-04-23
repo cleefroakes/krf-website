@@ -530,11 +530,15 @@ async function publishNews() {
   const title   = document.getElementById('news-title')?.value?.trim();
   const content = document.getElementById('news-content')?.value?.trim();
   const tag     = document.getElementById('news-tag')?.value || 'News';
+  const cover   = document.getElementById('news-cover')?.value?.trim() || null;
+  const video   = document.getElementById('news-video')?.value?.trim() || null;
   if (!title || !content) { showToast('Please fill in title and content'); return; }
 
   showToast('Publishing...');
   const { error } = await STATE.sb.from('news').insert({
     title, content, tag,
+    cover_image_url: cover,
+    video_url: video,
     published: true,
     published_at: new Date().toISOString(),
     author_id: STATE.user.id,
