@@ -287,7 +287,7 @@ function tournamentCardHTML(t) {
       <div class="t-card-meta">
         <span>${t.max_teams || 0} Teams</span>
         <span>${t.venue || 'TBC'}</span>
-        <span>${t.start_date ? new Date(t.start_date).toLocaleDateString('en-KE',{month:'short',year:'numeric'}) : ''}</span>
+       <span>${t.start_date ? new Date(t.start_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : ''}</span>
       </div>
     </div>
   </div>`;
