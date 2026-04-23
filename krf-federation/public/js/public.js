@@ -571,13 +571,52 @@ async function loadVideos() {
   const grid = document.getElementById('videoGrid');
   if (!grid) return;
   const videos = await api('media', { type: 'video', limit: 20 });
-  const fallback = ['KPL Round 9 Highlights','Nairobi Bulls Training','KRF Cup Semifinal','Best Goals January','Championship Final 2024'];
-  const items = videos?.length ? videos : fallback.map((t, i) => ({ id: i, title: t, file_url: null, views: Math.floor(Math.random()*2000000) }));
-  grid.innerHTML = items.map(v => `
-    <div class="video-tile" onclick="showToast('Playing: ${v.title}')">
-      <div class="video-thumb">${v.thumbnail_url ? `<img src="${v.thumbnail_url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : '🎬'}<div class="play-icon">▶</div></div>
-      <div class="video-info"><h4>${v.title || 'Match Video'}</h4><small>${v.views ? (v.views/1000).toFixed(0)+'K views' : ''}</small></div>
-    </div>`).join('');
+  if (!videos?.length) {
+    grid.innerHTML = '<p style="color:var(--dim);padding:1rem;font-size:.85rem">No videos yet — upload from the Admin Portal</p>';
+    return;
+  }
+  grid.innerHTML = videos.map(v => {
+    // Detect YouTube URL and convert to embed
+    let embedUrl = null;
+    if (v.file_url?.includes('youtube.com/watch')) {
+      const videoId = new URL(v.file_url).searchParams.get('v');
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    } else if (v.file_url?.includes('youtu.be/')) {
+      const videoId = v.file_url.split('youtu.be/')[1].split('?')[0];
+      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+    }
+    const thumb = v.thumbnail_url || (embedUrl ? embedUrl.replace('embed/','vi/') + '/hqdefault.jpg' : null);
+    return `<div class="video-tile" onclick="playVideo('${v.id}')">
+      <div class="video-thumb" id="vthumb-${v.id}">
+        ${thumb ? `<img src="${thumb}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : '🎬'}
+        <div class="play-icon">▶</div>
+      </div>
+      <div class="video-info">
+        <h4>${v.title || 'Match Video'}</h4>
+        <small>${v.category || ''} ${v.views ? '· ' + (v.views/1000).toFixed(0) + 'K views' : ''}</small>
+      </div>
+      <div class="video-player" id="vplayer-${v.id}" style="display:none;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;margin-top:.5rem">
+        ${embedUrl
+          ? `<iframe src="${embedUrl}" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="autoplay"></iframe>`
+          : `<video controls style="position:absolute;inset:0;width:100%;height:100%" src="${v.file_url}"></video>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function playVideo(id) {
+  const thumb = document.getElementById('vthumb-' + id);
+  const player = document.getElementById('vplayer-' + id);
+  if (!player) return;
+  const isOpen = player.style.display !== 'none';
+  // Close all other players first
+  document.querySelectorAll('[id^="vplayer-"]').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="vthumb-"]').forEach(t => t.style.display = 'block');
+  if (!isOpen) {
+    player.style.display = 'block';
+    if (thumb) thumb.style.display = 'none';
+  }
 }
 
 function setGalleryTab(tab, btn) {
