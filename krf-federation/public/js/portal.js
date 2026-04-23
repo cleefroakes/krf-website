@@ -200,7 +200,7 @@ const NAV_MAP = {
     { sec: 'Dashboard', items: [{ id:'overview',si:'▦',lbl:'Overview' },{ id:'schedule',si:'◷',lbl:'Schedule' }] },
     { sec: 'Match Day', items: [{ id:'live',si:'●',lbl:'Live Score Entry',badge:'LIVE' },{ id:'lineup',si:'◈',lbl:'Lineups' },{ id:'events',si:'◉',lbl:'Event Log' },{ id:'report',si:'◎',lbl:'Match Report' }] },
     { sec: 'Registration', items: [{ id:'playerreg',si:'◻',lbl:'Player Registration' },{ id:'teamreg',si:'◼',lbl:'Team Registration' }] },
-    { sec: 'Admin', items: [{ id:'users',si:'◈',lbl:'Manage Users' },{ id:'teams_admin',si:'▣',lbl:'Teams & Rosters' },{ id:'tournaments',si:'◆',lbl:'Tournaments' },{ id:'gallery',si:'▨',lbl:'Gallery & Media' },{ id:'settings',si:'⚙',lbl:'Site Settings' }] },
+    { sec: 'Admin', items: [{ id:'users',si:'◈',lbl:'Manage Users' },{ id:'teams_admin',si:'▣',lbl:'Teams & Rosters' },{ id:'tournaments',si:'◆',lbl:'Tournaments' },{ id:'gallery',si:'▨',lbl:'Gallery & Media' },{ id:'news',si:'📰',lbl:'News & Announcements' },{ id:'settings',si:'⚙',lbl:'Site Settings' }] },  
   ],
   commissioner: [
     { sec: 'Dashboard', items: [{ id:'overview',si:'▦',lbl:'Overview' },{ id:'schedule',si:'◷',lbl:'Assignments' }] },
@@ -266,6 +266,7 @@ const PAGE_META = {
   lineview:     ['MATCH VIEW', 'Linesman live overview'],
   linesign:     ['SIGN EVENT LOG', 'Review & sign-off'],
   mydocs:       ['MY CLEARANCES', 'Document uploads'],
+  news:         ['NEWS & ANNOUNCEMENTS', 'Publish articles'],
 };
 
 function nav(id) {
