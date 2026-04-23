@@ -537,9 +537,59 @@ function renderNewsGrid(el, news) {
     </div>`;
 }
 
-function renderNews() {
-  const el = document.getElementById('newsGrid');
-  if (el) renderNewsGrid(el, STATE.news);
+function renderNewsGrid(el, news) {
+  if (!news?.length) { el.innerHTML = '<p style="color:var(--dim);padding:1rem">No news yet</p>'; return; }
+  const feat = news[0], rest = news.slice(1, 5);
+  el.innerHTML = `
+    <div class="news-grid">
+      <div class="news-featured" onclick="openArticle('${feat.id}')">
+        <div class="news-featured-img" style="${feat.cover_image_url ? `background:url('${feat.cover_image_url}') center/cover no-repeat` : `background:linear-gradient(135deg,${feat.hero_color||'#C8102E'},#0d0d0d)`}"></div>
+        <div class="news-featured-overlay"></div>
+        <div class="news-featured-body">
+          <span class="nf-tag">${feat.tag || 'News'}</span>
+          <div class="nf-title">${feat.title}</div>
+          <div class="nf-meta">${feat.published_at ? new Date(feat.published_at).toLocaleDateString('en-KE') : ''}</div>
+        </div>
+      </div>
+      <div class="news-list">${rest.map(n => `
+        <div class="news-item" onclick="openArticle('${n.id}')">
+          <div class="ni-tag">${n.tag || 'News'}</div>
+          <div class="ni-title">${n.title}</div>
+          <div class="ni-meta">${n.published_at ? new Date(n.published_at).toLocaleDateString('en-KE') : ''}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div id="articleModal" class="overlay-bg" onclick="if(event.target===this)this.classList.remove('open')">
+      <div class="team-modal" id="articleModalBody" style="max-width:720px;padding:0;overflow-y:auto;max-height:90vh"></div>
+    </div>`;
+}
+
+function openArticle(id) {
+  const article = STATE.news.find(n => n.id === id);
+  if (!article) return;
+  const modal = document.getElementById('articleModal') || (() => {
+    const m = document.createElement('div');
+    m.id = 'articleModal';
+    m.className = 'overlay-bg';
+    m.onclick = e => { if (e.target === m) m.classList.remove('open'); };
+    document.body.appendChild(m);
+    return m;
+  })();
+  modal.innerHTML = `
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:8px;max-width:720px;width:100%;margin:2rem auto;overflow:hidden;max-height:90vh;overflow-y:auto">
+      ${article.cover_image_url ? `<div style="aspect-ratio:16/9;background:url('${article.cover_image_url}') center/cover no-repeat"></div>` : `<div style="aspect-ratio:16/9;background:linear-gradient(135deg,${article.hero_color||'#C8102E22'},#0d0d0d)"></div>`}
+      <div style="padding:2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <span style="background:rgba(200,16,46,.15);color:var(--red);border:1px solid rgba(200,16,46,.3);font-size:.62rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 10px;border-radius:2px">${article.tag||'News'}</span>
+          <button onclick="document.getElementById('articleModal').classList.remove('open')" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer">✕</button>
+        </div>
+        <h2 style="font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;margin-bottom:.5rem">${article.title}</h2>
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:1.5rem">${article.published_at ? new Date(article.published_at).toLocaleDateString('en-KE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) : ''}</div>
+        ${article.video_url ? `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;margin-bottom:1.5rem"><iframe src="${article.video_url.includes('youtube')?article.video_url.replace('watch?v=','embed/'):article.video_url}" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div>` : ''}
+        <div style="font-size:.88rem;color:var(--soft);line-height:1.9;white-space:pre-wrap">${article.content || ''}</div>
+      </div>
+    </div>`;
+  modal.classList.add('open');
 }
 
 // ─────────────────────────────────────────────────────────
