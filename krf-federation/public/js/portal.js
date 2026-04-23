@@ -135,8 +135,6 @@ function doLogout() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('app').classList.remove('show');
 }
-}
-
 // ─────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────
