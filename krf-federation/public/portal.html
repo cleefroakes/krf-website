@@ -124,6 +124,7 @@ window.renderPortalPageById = function(id) {
     profile,    mystats,     schedule,
     commlive,   precheck,    incidents,  countersign,
     boundary,   lineview,    linesign,   mydocs,
+    news,
   };
   if (renders[id]) renders[id]();
   else document.getElementById('mainContent').innerHTML =
@@ -1197,7 +1198,45 @@ function schedule() {
           <span class="bdg bdg-amber">Upcoming</span>
         </div>`;
       }).join('') : '<div style="color:var(--dim);font-size:.78rem;padding:.5rem 0">No upcoming fixtures scheduled</div>'
-    )}`;
+)}`;
+}
+
+async function news() {
+  const { data: articles } = await STATE.sb.from('news').select('*').order('created_at', { ascending: false }).limit(20);
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="document.getElementById('newsForm').style.display='block'">+ Write Article</button>
+    </div>
+    <div id="newsForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Title</label><input id="news-title" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="Article title..."/></div>
+      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Tag</label>
+        <select id="news-tag" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none">
+          <option>News</option><option>Match Report</option><option>Tournament</option><option>Transfer</option><option>Federation</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Content</label><textarea id="news-content" rows="5" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none;resize:vertical" placeholder="Write your article here..."></textarea></div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-p" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="publishNews()">Publish Now →</button>
+        <button class="btn-s" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="document.getElementById('newsForm').style.display='none'">Cancel</button>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--bg3)">
+          <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Title</th>
+          <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Tag</th>
+          <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Date</th>
+          <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Status</th>
+        </tr></thead>
+        <tbody>${articles?.length ? articles.map(a => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+          <td style="padding:.7rem .85rem;font-size:.82rem;font-weight:500">${a.title}</td>
+          <td style="padding:.7rem .85rem"><span style="background:rgba(244,169,0,.15);color:var(--gold);border:1px solid rgba(244,169,0,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.tag || 'News'}</span></td>
+          <td style="padding:.7rem .85rem;font-size:.72rem;color:var(--muted)">${new Date(a.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}</td>
+          <td style="padding:.7rem .85rem"><span style="background:rgba(0,154,77,.15);color:#00c962;border:1px solid rgba(0,154,77,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.published ? 'Published' : 'Draft'}</span></td>
+        </tr>`).join('') : '<tr><td colspan="4" style="padding:2rem;text-align:center;color:var(--muted);font-size:.82rem">No articles yet — write your first one!</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
 }
 </script>
 </body>
