@@ -511,10 +511,112 @@ function getDocStatus(docType) {
 // ─────────────────────────────────────────────────────────
 // PROFILE UPDATE
 // ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// PROFILE UPDATE
+// ─────────────────────────────────────────────────────────
 async function saveProfile(data) {
-  const result = await api('auth', { action: 'update' }, 'POST', data);
-  if (result?.user) { STATE.user = result.user; showToast('Profile updated!'); }
-  else showToast(result?.error || 'Update failed');
+  const { error } = await STATE.sb.from('users').update(data).eq('id', STATE.user.id);
+  if (error) { showToast('Update failed: ' + error.message); return; }
+  Object.assign(STATE.user, data);
+  document.getElementById('sbName').textContent = STATE.user.name || STATE.user.email;
+  showToast('Profile updated!');
+}
+
+// ─────────────────────────────────────────────────────────
+// NEWS
+// ─────────────────────────────────────────────────────────
+async function publishNews() {
+  const title   = document.getElementById('news-title')?.value?.trim();
+  const content = document.getElementById('news-content')?.value?.trim();
+  const tag     = document.getElementById('news-tag')?.value || 'News';
+  if (!title || !content) { showToast('Please fill in title and content'); return; }
+
+  showToast('Publishing...');
+  const { error } = await STATE.sb.from('news').insert({
+    title, content, tag,
+    published: true,
+    published_at: new Date().toISOString(),
+    author_id: STATE.user.id,
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Article published and live on site!');
+  const form = document.getElementById('newsForm');
+  if (form) form.style.display = 'none';
+  nav('overview');
+}
+
+// ─────────────────────────────────────────────────────────
+// TEAMS ADMIN
+// ─────────────────────────────────────────────────────────
+async function saveTeam() {
+  const name   = document.getElementById('t-name')?.value?.trim();
+  const abbr   = document.getElementById('t-abbr')?.value?.trim().toUpperCase();
+  const city   = document.getElementById('t-city')?.value?.trim();
+  const ground = document.getElementById('t-ground')?.value?.trim();
+  const color  = document.getElementById('t-color')?.value || '#C8102E';
+  const bg     = document.getElementById('t-bg')?.value || '#111111';
+  if (!name || !abbr) { showToast('Team name and abbreviation required'); return; }
+
+  showToast('Saving team...');
+  const { error } = await STATE.sb.from('teams').insert({
+    name, abbr, city, home_ground: ground,
+    color, bg_color: bg, is_active: true,
+  });
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  // Reload teams into state
+  const { data } = await STATE.sb.from('teams').select('*').eq('is_active', true).order('name');
+  if (data) STATE.teams = data;
+  showToast('Team registered!');
+  nav('teams_admin');
+}
+
+// ─────────────────────────────────────────────────────────
+// SITE SETTINGS
+// ─────────────────────────────────────────────────────────
+async function saveSettings() {
+  const fields = [
+    ['hero_video_url',   document.getElementById('heroUrl')?.value],
+    ['ticker_message',  document.getElementById('tickerMsg')?.value],
+    ['season_label',    document.getElementById('seasonLabel')?.value],
+    ['facebook_url',    document.getElementById('fbUrl')?.value],
+    ['instagram_url',   document.getElementById('igUrl')?.value],
+    ['youtube_url',     document.getElementById('ytUrl')?.value],
+    ['twitter_url',     document.getElementById('twUrl')?.value],
+    ['tiktok_url',      document.getElementById('ttUrl')?.value],
+  ].filter(([, v]) => v !== null && v !== undefined);
+
+  showToast('Saving...');
+  for (const [key, value] of fields) {
+    await STATE.sb.from('site_settings').upsert({ key, value });
+  }
+  showToast('Settings saved!');
+}
+
+// ─────────────────────────────────────────────────────────
+// LOAD PORTAL DATA (fixed — direct Supabase)
+// ─────────────────────────────────────────────────────────
+async function loadPortalData() {
+  const [{ data: teams }, { data: schedules }] = await Promise.all([
+    STATE.sb.from('teams').select('*').eq('is_active', true).order('name'),
+    STATE.sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)').order('match_date', { ascending: true }).limit(10),
+  ]);
+  if (teams)     STATE.teams     = teams;
+  if (schedules) STATE.schedules = schedules;
+
+  const live = schedules?.find(m => m.status === 'live');
+  if (live) {
+    STATE.liveMatch = live;
+    STATE.liveH = live.home_score || 0;
+    STATE.liveA = live.away_score || 0;
+    STATE.period = live.current_period || 1;
+    const pill = document.getElementById('sbLivePill');
+    if (pill) pill.textContent = `LIVE — ${live.home_team?.abbr} ${STATE.liveH}:${STATE.liveA} ${live.away_team?.abbr}`;
+    subscribeToLive(live.id);
+  }
+
+  const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
+  if (docs) STATE.docs = docs;
 }
 
 // ─────────────────────────────────────────────────────────
