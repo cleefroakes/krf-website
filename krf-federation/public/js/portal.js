@@ -462,13 +462,45 @@ async function handleDocUpload(inputEl, docType) {
   const file = inputEl.files[0];
   if (!file) return;
   showToast('Uploading...');
-  const result = await uploadFile(file, docType);
-  if (result && !result.error) {
+
+  const isMedia = docType === 'photo' || docType === 'video' || docType === 'hero';
+  const bucket = isMedia ? 'media' : 'player-docs';
+  const folder = isMedia ? `${docType}s` : `documents/${STATE.user.id}`;
+  const ext = file.name.split('.').pop();
+  const path = `${folder}/${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await STATE.sb.storage.from(bucket).upload(path, file, { upsert: true });
+  if (uploadError) { showToast('Upload failed: ' + uploadError.message); return; }
+
+  const { data: { publicUrl } } = STATE.sb.storage.from(bucket).getPublicUrl(path);
+
+  if (isMedia) {
+    // Save to media table
+    const title = document.getElementById('media-title')?.value || file.name;
+    const { error } = await STATE.sb.from('media').insert({
+      title,
+      media_type: docType,
+      file_url: publicUrl,
+      approved: true,
+      visibility: 'public',
+      uploaded_by: STATE.user.id,
+    });
+    if (error) { showToast('Saved failed: ' + error.message); return; }
+    showToast('Media uploaded and live on public site!');
+  } else {
+    // Save to documents table
+    await STATE.sb.from('documents').upsert({
+      user_id: STATE.user.id,
+      doc_type: docType,
+      file_url: publicUrl,
+      status: 'pending',
+      uploaded_at: new Date().toISOString(),
+    });
+    // Refresh doc statuses
+    const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
+    if (docs) STATE.docs = docs;
     showToast(`${docType.replace('_', ' ')} uploaded!`);
-    // Refresh docs
-    const docsRes = await api('data', { resource: 'documents' });
-    if (docsRes) { STATE.docs = docsRes; }
-  } else showToast(result?.error || 'Upload failed');
+  }
 }
 
 function getDocStatus(docType) {
