@@ -17,7 +17,7 @@ let STATE = {
   user: null,
   token: null,
   currentPage: 'overview',
-  sb: null,                  // Supabase client
+  sb: null,
   liveMatch: null,
   liveH: 0, liveA: 0,
   period: 1, matchTimer: 0,
@@ -34,7 +34,7 @@ let STATE = {
 // SUPABASE
 // ─────────────────────────────────────────────────────────
 function initSupabase() {
-  if (window.supabase && CONFIG.SUPABASE_URL !== 'https://YOUR_PROJECT.supabase.co') {
+  if (window.supabase) {
     STATE.sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
   }
 }
@@ -57,37 +57,6 @@ function subscribeToLive(matchId) {
 }
 
 // ─────────────────────────────────────────────────────────
-// API
-// ─────────────────────────────────────────────────────────
-async function api(endpoint, params = {}, method = 'GET', body = null) {
-  const qs = new URLSearchParams(params).toString();
-  const url = `${CONFIG.API_BASE}/${endpoint}${qs ? '?' + qs : ''}`;
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(STATE.token ? { Authorization: `Bearer ${STATE.token}` } : {}) },
-    ...(body ? { body: JSON.stringify(body) } : {})
-  };
-  try {
-    const res = await fetch(url, opts);
-    return await res.json();
-  } catch (e) { console.error(e); return null; }
-}
-
-async function uploadFile(file, docType, extraFields = {}) {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('doc_type', docType);
-  Object.entries(extraFields).forEach(([k, v]) => form.append(k, v));
-  const type = docType === 'video' ? 'video' : docType === 'photo' ? 'photo' : 'document';
-  const res = await fetch(`${CONFIG.API_BASE}/upload?type=${type}`, {
-    method: 'POST',
-    headers: STATE.token ? { Authorization: `Bearer ${STATE.token}` } : {},
-    body: form
-  });
-  return res.json();
-}
-
-// ─────────────────────────────────────────────────────────
 // AUTH
 // ─────────────────────────────────────────────────────────
 async function doLogin() {
@@ -99,8 +68,9 @@ async function doLogin() {
   const { data, error } = await STATE.sb.auth.signInWithPassword({ email, password: pass });
   if (error) { showToast(error.message); return; }
 
-  const { data: profile } = await STATE.sb.from('users').select('*').eq('id', data.user.id).single();
+  const { data: profile } = await STATE.sb.from('users').select('*, teams(id,name,abbr,color)').eq('id', data.user.id).single();
   STATE.user = profile || { id: data.user.id, name: data.user.user_metadata?.name || email.split('@')[0], role: 'player', email };
+  STATE.user.initials = (STATE.user.name || '').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   bootPortal();
 }
 
@@ -116,7 +86,8 @@ async function doRegister() {
   if (error) { showToast(error.message); return; }
 
   await STATE.sb.from('users').insert({ id: data.user.id, name, email, role: 'player', docs_status: 'incomplete', is_active: false });
-  STATE.user = { id: data.user.id, name, email, role: 'player' };
+  STATE.user = { id: data.user.id, name, email, role: 'player', docs_status: 'incomplete', is_active: false };
+  STATE.user.initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   showToast('Welcome! Complete your registration.');
   bootPortal();
 }
@@ -124,8 +95,9 @@ async function doRegister() {
 async function checkSavedSession() {
   const { data: { session } } = await STATE.sb.auth.getSession();
   if (!session?.user) return;
-  const { data: profile } = await STATE.sb.from('users').select('*').eq('id', session.user.id).single();
+  const { data: profile } = await STATE.sb.from('users').select('*, teams(id,name,abbr,color)').eq('id', session.user.id).single();
   STATE.user = profile || { id: session.user.id, name: session.user.user_metadata?.name || 'User', role: 'player', email: session.user.email };
+  STATE.user.initials = (STATE.user.name || '').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   bootPortal();
 }
 
@@ -135,6 +107,7 @@ function doLogout() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('app').classList.remove('show');
 }
+
 // ─────────────────────────────────────────────────────────
 // BOOT
 // ─────────────────────────────────────────────────────────
@@ -145,7 +118,7 @@ async function bootPortal() {
   const u = STATE.user;
   const r = ROLE_CONFIG[u.role] || ROLE_CONFIG.player;
 
-  document.getElementById('sbAv').textContent       = u.initials || u.name.split(' ').map(n=>n[0]).join('');
+  document.getElementById('sbAv').textContent       = u.initials || '??';
   document.getElementById('sbAv').style.background  = r.color + '18';
   document.getElementById('sbAv').style.color       = r.color;
   document.getElementById('sbAv').style.borderColor = r.color + '44';
@@ -159,35 +132,40 @@ async function bootPortal() {
   nav('overview');
 }
 
+// ─────────────────────────────────────────────────────────
+// LOAD PORTAL DATA — real Supabase only, no mock
+// ─────────────────────────────────────────────────────────
 async function loadPortalData() {
-  const [teams, schedules] = await Promise.all([
-    api('data', { resource: 'teams' }),
-    api('matches', { action: 'list', limit: 10 }),
+  const [{ data: teams }, { data: schedules }] = await Promise.all([
+    STATE.sb.from('teams').select('*, standings(points,played,won,drawn,lost,goals_for,goals_against)').eq('is_active', true).order('name'),
+    STATE.sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)').order('match_date', { ascending: true }).limit(20),
   ]);
   if (teams)     STATE.teams     = teams;
   if (schedules) STATE.schedules = schedules;
 
-  // Live match
-  const live = STATE.schedules?.find(m => m.status === 'live');
+  const live = schedules?.find(m => m.status === 'live');
   if (live) {
     STATE.liveMatch = live;
-    STATE.liveH = live.home_score; STATE.liveA = live.away_score;
-    STATE.period = live.current_period;
-    const sbPill = document.getElementById('sbLivePill');
-    if (sbPill) sbPill.textContent = `LIVE — ${live.home_team?.abbr} ${STATE.liveH}:${STATE.liveA} ${live.away_team?.abbr}`;
+    STATE.liveH = live.home_score || 0;
+    STATE.liveA = live.away_score || 0;
+    STATE.period = live.current_period || 1;
+    const pill = document.getElementById('sbLivePill');
+    if (pill) pill.textContent = `LIVE — ${live.home_team?.abbr} ${STATE.liveH}:${STATE.liveA} ${live.away_team?.abbr}`;
     subscribeToLive(live.id);
+  } else {
+    const pill = document.getElementById('sbLivePill');
+    if (pill) pill.textContent = 'No match live right now';
   }
 
-  // Load user docs
-  const docsRes = await api('data', { resource: 'documents' });
-  if (docsRes) STATE.docs = docsRes;
+  const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
+  if (docs) STATE.docs = docs;
 }
 
 // ─────────────────────────────────────────────────────────
 // ROLE CONFIG
 // ─────────────────────────────────────────────────────────
 const ROLE_CONFIG = {
-  admin:       { label: 'Administrator',    color: '#C8102E', icon: '⭐' },
+  admin:       { label: 'Administrator',     color: '#C8102E', icon: '⭐' },
   commissioner:{ label: 'Match Commissioner',color: '#0d8a6e', icon: '🏛️' },
   referee:     { label: 'Referee',           color: '#1a6fc4', icon: '🟥' },
   linesman:    { label: 'Linesman',          color: '#d4920a', icon: '🚩' },
@@ -200,7 +178,7 @@ const NAV_MAP = {
     { sec: 'Dashboard', items: [{ id:'overview',si:'▦',lbl:'Overview' },{ id:'schedule',si:'◷',lbl:'Schedule' }] },
     { sec: 'Match Day', items: [{ id:'live',si:'●',lbl:'Live Score Entry',badge:'LIVE' },{ id:'lineup',si:'◈',lbl:'Lineups' },{ id:'events',si:'◉',lbl:'Event Log' },{ id:'report',si:'◎',lbl:'Match Report' }] },
     { sec: 'Registration', items: [{ id:'playerreg',si:'◻',lbl:'Player Registration' },{ id:'teamreg',si:'◼',lbl:'Team Registration' }] },
-    { sec: 'Admin', items: [{ id:'users',si:'◈',lbl:'Manage Users' },{ id:'teams_admin',si:'▣',lbl:'Teams & Rosters' },{ id:'tournaments',si:'◆',lbl:'Tournaments' },{ id:'gallery',si:'▨',lbl:'Gallery & Media' },{ id:'news',si:'📰',lbl:'News & Announcements' },{ id:'settings',si:'⚙',lbl:'Site Settings' }] },  
+    { sec: 'Admin', items: [{ id:'users',si:'◈',lbl:'Manage Users' },{ id:'teams_admin',si:'▣',lbl:'Teams & Rosters' },{ id:'tournaments',si:'◆',lbl:'Tournaments' },{ id:'gallery',si:'▨',lbl:'Gallery & Media' },{ id:'news',si:'📰',lbl:'News & Announcements' },{ id:'settings',si:'⚙',lbl:'Site Settings' }] },
   ],
   commissioner: [
     { sec: 'Dashboard', items: [{ id:'overview',si:'▦',lbl:'Overview' },{ id:'schedule',si:'◷',lbl:'Assignments' }] },
@@ -267,29 +245,22 @@ const PAGE_META = {
   linesign:     ['SIGN EVENT LOG', 'Review & sign-off'],
   mydocs:       ['MY CLEARANCES', 'Document uploads'],
   news:         ['NEWS & ANNOUNCEMENTS', 'Publish articles'],
+  user_docs:    ['USER DOCUMENTS', 'Review & approve'],
 };
 
-function nav(id) {
+function nav(id, extra) {
   document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
   const el = document.getElementById('nav-' + id); if (el) el.classList.add('active');
   const meta = PAGE_META[id] || [id.toUpperCase(), ''];
   document.getElementById('tbTitle').textContent = meta[0];
   document.getElementById('tbSub').textContent   = meta[1];
   STATE.currentPage = id;
+  STATE._navExtra = extra || null;
   renderPortalPage(id);
 }
 
-// ─────────────────────────────────────────────────────────
-// PAGE ROUTER — delegates to portal-pages.js helpers
-// All page renders are defined inline here for single-file deployment
-// ─────────────────────────────────────────────────────────
 function renderPortalPage(id) {
-  // Dispatch to the portal HTML's own render functions (defined in portal.html inline script)
-  if (window.PORTAL_RENDERS && window.PORTAL_RENDERS[id]) {
-    window.PORTAL_RENDERS[id]();
-  } else if (window.renderPortalPageById) {
-    window.renderPortalPageById(id);
-  }
+  if (window.renderPortalPageById) window.renderPortalPageById(id);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -303,20 +274,12 @@ async function addGoal(side) {
   const team = side === 'home' ? STATE.liveMatch?.home_team?.name : STATE.liveMatch?.away_team?.name;
   const elapsed = Math.max(1, STATE.period * 15 - Math.floor(STATE.matchTimer / 60));
 
-  // Push to API
   if (STATE.liveMatch) {
-    await api('matches', { action: 'score' }, 'POST', {
-      match_id: STATE.liveMatch.id,
-      home_score: STATE.liveH,
-      away_score: STATE.liveA,
-    });
-    await api('matches', { action: 'event' }, 'POST', {
-      match_id: STATE.liveMatch.id,
-      event_type: 'goal',
-      minute: elapsed,
-      period: STATE.period,
+    await STATE.sb.from('matches').update({ home_score: STATE.liveH, away_score: STATE.liveA }).eq('id', STATE.liveMatch.id);
+    await STATE.sb.from('match_events').insert({
+      match_id: STATE.liveMatch.id, event_type: 'goal', minute: elapsed, period: STATE.period,
       description: `GOAL — Player (${team}) [${STATE.liveH}–${STATE.liveA}]`,
-      tournament_id: STATE.liveMatch?.tournament_id,
+      logged_by: STATE.user.id, logged_by_role: STATE.user.role,
     });
   }
 
@@ -329,7 +292,7 @@ async function undoGoal(side) {
   if (side === 'home' && STATE.liveH > 0) STATE.liveH--;
   else if (side === 'away' && STATE.liveA > 0) STATE.liveA--;
   if (STATE.liveMatch) {
-    await api('matches', { action: 'score' }, 'POST', { match_id: STATE.liveMatch.id, home_score: STATE.liveH, away_score: STATE.liveA });
+    await STATE.sb.from('matches').update({ home_score: STATE.liveH, away_score: STATE.liveA }).eq('id', STATE.liveMatch.id);
   }
   updateLiveDisplays();
   showToast('Goal removed');
@@ -339,14 +302,14 @@ async function nextPeriod() {
   if (STATE.period >= 4) { await endMatch(); return; }
   STATE.period++;
   STATE.matchTimer = 15 * 60;
-  if (STATE.liveMatch) await api('matches', { action: 'score' }, 'POST', { match_id: STATE.liveMatch.id, current_period: STATE.period });
+  if (STATE.liveMatch) await STATE.sb.from('matches').update({ current_period: STATE.period }).eq('id', STATE.liveMatch.id);
   document.getElementById('periodBadge') && (document.getElementById('periodBadge').textContent = 'Q' + STATE.period);
   showToast('Q' + STATE.period + ' started!');
 }
 
 async function endMatch() {
   STATE.matchEnded = true;
-  if (STATE.liveMatch) await api('matches', { action: 'score' }, 'POST', { match_id: STATE.liveMatch.id, status: 'completed' });
+  if (STATE.liveMatch) await STATE.sb.from('matches').update({ status: 'completed' }).eq('id', STATE.liveMatch.id);
   document.getElementById('periodBadge') && (document.getElementById('periodBadge').textContent = 'FT');
   showToast(`Full Time! ${STATE.liveH}:${STATE.liveA}`);
 }
@@ -359,10 +322,10 @@ async function logEvent() {
   const elapsed = Math.max(1, STATE.period * 15 - Math.floor(STATE.matchTimer / 60));
 
   if (STATE.liveMatch) {
-    await api('matches', { action: 'event' }, 'POST', {
-      match_id: STATE.liveMatch.id, event_type: type,
-      minute: elapsed, period: STATE.period,
+    await STATE.sb.from('match_events').insert({
+      match_id: STATE.liveMatch.id, event_type: type, minute: elapsed, period: STATE.period,
       player_name: player, description: `${type.replace('_',' ').toUpperCase()} — ${player} (${team})`,
+      logged_by: STATE.user.id, logged_by_role: STATE.user.role,
     });
   }
 
@@ -416,44 +379,37 @@ setInterval(() => {
 // ─────────────────────────────────────────────────────────
 async function submitReport(narrative, comments, disciplinary) {
   if (!STATE.liveMatch) { showToast('No active match'); return; }
-  const result = await api('matches', { action: 'report' }, 'POST', {
-    match_id: STATE.liveMatch.id, narrative, post_match_comments: comments, disciplinary_summary: disciplinary
+  const { error } = await STATE.sb.from('match_reports').upsert({
+    match_id: STATE.liveMatch.id, narrative,
+    post_match_comments: comments, disciplinary_summary: disciplinary,
+    referee_id: STATE.user.id, ref_submitted: true, ref_submitted_at: new Date().toISOString(),
   });
-  if (result && !result.error) {
+  if (!error) {
     STATE.reportState.refSubmitted = true;
     showToast('Report submitted! Linesman notified for sign-off.');
-    updateSignoffUI();
-  } else showToast(result?.error || 'Submit failed');
+  } else showToast(error.message || 'Submit failed');
 }
 
 async function linemanSign() {
   if (!STATE.liveMatch) return;
-  const result = await api('matches', { action: 'sign' }, 'POST', { match_id: STATE.liveMatch.id });
-  if (result && !result.error) {
+  const { error } = await STATE.sb.from('match_reports')
+    .update({ line_signed_off: true, line_signed_at: new Date().toISOString(), linesman_id: STATE.user.id })
+    .eq('match_id', STATE.liveMatch.id);
+  if (!error) {
     STATE.reportState.lineSignedOff = true;
     showToast('Event log signed! Commissioner notified.');
-    updateSignoffUI();
-  } else showToast(result?.error || 'Sign-off failed');
+  } else showToast(error.message);
 }
 
 async function commCountersign(notes, recommendation) {
   if (!STATE.liveMatch) return;
-  const result = await api('matches', { action: 'countersign' }, 'POST', {
-    match_id: STATE.liveMatch.id, commissioner_notes: notes, disciplinary_recommendations: recommendation
-  });
-  if (result && !result.error) {
+  const { error } = await STATE.sb.from('match_reports')
+    .update({ comm_countersigned: true, comm_notes: notes, comm_disciplinary: recommendation, comm_signed_at: new Date().toISOString(), commissioner_id: STATE.user.id })
+    .eq('match_id', STATE.liveMatch.id);
+  if (!error) {
     STATE.reportState.commCountersigned = true;
     showToast('Report countersigned and locked!');
-    updateSignoffUI();
-  } else showToast(result?.error || 'Countersign failed');
-}
-
-function updateSignoffUI() {
-  document.querySelectorAll('[data-signoff]').forEach(el => {
-    const step = el.dataset.signoff;
-    const done = { ref: STATE.reportState.refSubmitted, line: STATE.reportState.lineSignedOff, comm: STATE.reportState.commCountersigned };
-    el.className = el.className.replace(/sof-step \w+/, '') + ` sof-step ${done[step] ? 'done' : 'current'}`;
-  });
+  } else showToast(error.message);
 }
 
 // ─────────────────────────────────────────────────────────
@@ -465,10 +421,10 @@ async function handleDocUpload(inputEl, docType) {
   showToast('Uploading...');
 
   const isMedia = docType === 'photo' || docType === 'video' || docType === 'hero';
-  const bucket = isMedia ? 'media' : 'player-docs';
-  const folder = isMedia ? `${docType}s` : `documents/${STATE.user.id}`;
-  const ext = file.name.split('.').pop();
-  const path = `${folder}/${Date.now()}.${ext}`;
+  const bucket  = isMedia ? 'media' : 'player-docs';
+  const folder  = isMedia ? `${docType}s` : `documents/${STATE.user.id}`;
+  const ext     = file.name.split('.').pop();
+  const path    = `${folder}/${Date.now()}.${ext}`;
 
   const { error: uploadError } = await STATE.sb.storage.from(bucket).upload(path, file, { upsert: true });
   if (uploadError) { showToast('Upload failed: ' + uploadError.message); return; }
@@ -476,42 +432,163 @@ async function handleDocUpload(inputEl, docType) {
   const { data: { publicUrl } } = STATE.sb.storage.from(bucket).getPublicUrl(path);
 
   if (isMedia) {
-    // Save to media table
-    const title = document.getElementById('media-title')?.value || file.name;
-    const { error } = await STATE.sb.from('media').insert({
-      title,
-      media_type: docType,
-      file_url: publicUrl,
-      approved: true,
-      visibility: 'public',
-      uploaded_by: STATE.user.id,
+    await STATE.sb.from('media').insert({
+      title: file.name, media_type: docType, file_url: publicUrl,
+      approved: true, visibility: 'public', uploaded_by: STATE.user.id,
     });
-    if (error) { showToast('Saved failed: ' + error.message); return; }
     showToast('Media uploaded and live on public site!');
   } else {
-    // Save to documents table
     await STATE.sb.from('documents').upsert({
-      user_id: STATE.user.id,
-      doc_type: docType,
-      file_url: publicUrl,
-      status: 'pending',
-      uploaded_at: new Date().toISOString(),
+      user_id: STATE.user.id, doc_type: docType, file_url: publicUrl,
+      status: 'pending', uploaded_at: new Date().toISOString(),
     });
-    // Refresh doc statuses
     const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
     if (docs) STATE.docs = docs;
-    showToast(`${docType.replace('_', ' ')} uploaded!`);
+    showToast(`${docType.replace('_', ' ')} uploaded! Pending admin review.`);
   }
 }
 
-function getDocStatus(docType) {
-  const doc = STATE.docs.find(d => d.doc_type === docType);
-  return doc?.status || 'pending';
+// ─────────────────────────────────────────────────────────
+// ADMIN — APPROVE / REJECT USERS
+// ─────────────────────────────────────────────────────────
+
+// Approve user account (set is_active = true)
+async function approveUser(userId) {
+  const { error } = await STATE.sb.from('users').update({ is_active: true }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('User approved and activated!');
+  nav('users');
+}
+
+// Reject / deactivate user account
+async function rejectUser(userId) {
+  const { error } = await STATE.sb.from('users').update({ is_active: false }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('User deactivated.');
+  nav('users');
+}
+
+// Change a user's role
+async function setUserRole(userId, newRole) {
+  const { error } = await STATE.sb.from('users').update({ role: newRole }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Role updated to ' + newRole);
+  nav('users');
 }
 
 // ─────────────────────────────────────────────────────────
-// PROFILE UPDATE
+// ADMIN — APPROVE / REJECT DOCUMENTS
 // ─────────────────────────────────────────────────────────
+
+// Approve a single document
+async function approveDoc(docId) {
+  const { error } = await STATE.sb.from('documents')
+    .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: STATE.user.id })
+    .eq('id', docId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Document approved ✓');
+  // Refresh current view
+  if (STATE._navExtra?.userId) {
+    openUserDocs(STATE._navExtra.userId, STATE._navExtra.userName);
+  } else {
+    nav('users');
+  }
+}
+
+// Flag / reject a document
+async function flagDoc(docId, reason) {
+  const { error } = await STATE.sb.from('documents')
+    .update({ status: 'flagged', flag_reason: reason || 'Flagged by admin', reviewed_at: new Date().toISOString(), reviewed_by: STATE.user.id })
+    .eq('id', docId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Document flagged.');
+  if (STATE._navExtra?.userId) {
+    openUserDocs(STATE._navExtra.userId, STATE._navExtra.userName);
+  }
+}
+
+// After reviewing all docs, mark user docs_status as approved
+async function clearUserDocs(userId) {
+  const { error } = await STATE.sb.from('users').update({ docs_status: 'approved' }).eq('id', userId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('All documents cleared — user fully approved!');
+  nav('users');
+}
+
+// Open doc review panel for a specific user
+async function openUserDocs(userId, userName) {
+  STATE._navExtra = { userId, userName };
+  document.getElementById('tbTitle').textContent = 'USER DOCUMENTS';
+  document.getElementById('tbSub').textContent   = userName || userId;
+
+  const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', userId).order('uploaded_at', { ascending: false });
+  const allDocs = docs || [];
+
+  const DOC_LABELS = {
+    national_id: '🪪 National ID', passport_photo: '📷 Passport Photo', player_status: '📋 Player Status',
+    ministry_form: '📄 Ministry Form', officiating_licence: '🏅 Officiating Licence',
+    police_clearance: '🏛️ Police Clearance', helb_clearance: '🎓 HELB Clearance',
+    eacc_clearance: '⚖️ EACC Clearance', crb_clearance: '💳 CRB Clearance',
+    tax_compliance: '🧾 Tax Compliance', kra_pin: '📌 KRA PIN',
+  };
+
+  const approved = allDocs.filter(d => d.status === 'approved').length;
+  const flagged  = allDocs.filter(d => d.status === 'flagged').length;
+  const pending  = allDocs.filter(d => d.status === 'pending').length;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem">
+      <button class="btn-s" onclick="nav('users')">← Back to Users</button>
+      <div style="font-size:.85rem;font-weight:600;color:var(--white)">${userName}</div>
+      <span class="bdg bdg-green">${approved} approved</span>
+      ${flagged ? `<span class="bdg bdg-red">${flagged} flagged</span>` : ''}
+      ${pending ? `<span class="bdg bdg-amber">${pending} pending</span>` : ''}
+    </div>
+
+    ${allDocs.length === 0 ? `
+      <div style="padding:2.5rem;text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:8px">
+        <div style="font-size:2rem;opacity:.25;margin-bottom:.75rem">📂</div>
+        <div style="color:var(--dim);font-size:.85rem">No documents uploaded yet by this user.</div>
+      </div>` : `
+      <div style="display:grid;gap:.6rem">
+        ${allDocs.map(d => {
+          const label = DOC_LABELS[d.doc_type] || ('📄 ' + d.doc_type.replace(/_/g,' '));
+          const isImg = d.file_url && /\.(jpg|jpeg|png|webp|gif)$/i.test(d.file_url);
+          const isPdf = d.file_url && /\.pdf$/i.test(d.file_url);
+          return `
+          <div style="background:var(--bg2);border:1px solid ${d.status==='approved'?'rgba(39,174,96,.35)':d.status==='flagged'?'rgba(200,16,46,.35)':'var(--border)'};border-radius:8px;padding:.85rem 1rem;display:flex;align-items:flex-start;gap:.85rem;flex-wrap:wrap">
+            <div style="flex:1;min-width:180px">
+              <div style="font-size:.82rem;font-weight:600;color:var(--white);margin-bottom:.2rem">${label}</div>
+              <div style="font-size:.68rem;color:var(--dim)">Uploaded: ${d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—'}</div>
+              ${d.flag_reason ? `<div style="font-size:.68rem;color:var(--red);margin-top:.2rem">⚠ ${d.flag_reason}</div>` : ''}
+            </div>
+            ${d.file_url ? `
+              <div style="flex-shrink:0">
+                ${isImg
+                  ? `<a href="${d.file_url}" target="_blank"><img src="${d.file_url}" style="height:52px;width:auto;border-radius:4px;border:1px solid var(--border);object-fit:cover" onerror="this.style.display='none'"/></a>`
+                  : `<a href="${d.file_url}" target="_blank" class="btn-s" style="font-size:.68rem;padding:.3rem .65rem">📎 View File</a>`}
+              </div>` : '<div style="font-size:.7rem;color:var(--muted)">No file</div>'}
+            <div style="display:flex;align-items:center;gap:.4rem;flex-shrink:0;margin-left:auto">
+              <span class="bdg bdg-${d.status==='approved'?'green':d.status==='flagged'?'red':'amber'}" style="font-size:.65rem">${d.status}</span>
+              ${d.status !== 'approved' ? `<button class="btn-s" style="font-size:.65rem;padding:.28rem .65rem;color:var(--green);border-color:rgba(39,174,96,.4)" onclick="approveDoc('${d.id}')">✓ Approve</button>` : ''}
+              ${d.status !== 'flagged'  ? `<button class="btn-s" style="font-size:.65rem;padding:.28rem .65rem;color:var(--red);border-color:rgba(200,16,46,.4)"   onclick="promptFlagDoc('${d.id}')">⚑ Flag</button>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:.5rem">
+        <button class="btn-p" onclick="clearUserDocs('${userId}')">✓ CLEAR ALL — Mark Fully Approved</button>
+        <button class="btn-s" onclick="nav('users')">← Back to Users</button>
+      </div>
+    `}`;
+}
+
+// Prompt for a flag reason before flagging
+function promptFlagDoc(docId) {
+  const reason = prompt('Flag reason (shown to user):') || 'Document invalid or unclear';
+  flagDoc(docId, reason);
+}
+
 // ─────────────────────────────────────────────────────────
 // PROFILE UPDATE
 // ─────────────────────────────────────────────────────────
@@ -537,43 +614,13 @@ async function publishNews() {
   showToast('Publishing...');
   const { error } = await STATE.sb.from('news').insert({
     title, content, tag,
-    cover_image_url: cover,
-    video_url: video,
-    published: true,
-    published_at: new Date().toISOString(),
-    author_id: STATE.user.id,
+    cover_image_url: cover, video_url: video,
+    published: true, published_at: new Date().toISOString(), author_id: STATE.user.id,
   });
   if (error) { showToast('Error: ' + error.message); return; }
   showToast('Article published and live on site!');
-  const form = document.getElementById('newsForm');
-  if (form) form.style.display = 'none';
-  nav('overview');
-}
-
-// ─────────────────────────────────────────────────────────
-// TEAMS ADMIN
-// ─────────────────────────────────────────────────────────
-async function saveTeam() {
-  const name   = document.getElementById('t-name')?.value?.trim();
-  const abbr   = document.getElementById('t-abbr')?.value?.trim().toUpperCase();
-  const city   = document.getElementById('t-city')?.value?.trim();
-  const ground = document.getElementById('t-ground')?.value?.trim();
-  const color  = document.getElementById('t-color')?.value || '#C8102E';
-  const bg     = document.getElementById('t-bg')?.value || '#111111';
-  if (!name || !abbr) { showToast('Team name and abbreviation required'); return; }
-
-  showToast('Saving team...');
-  const { error } = await STATE.sb.from('teams').insert({
-    name, abbr, city, home_ground: ground,
-    color, bg_color: bg, is_active: true,
-  });
-  if (error) { showToast('Error: ' + error.message); return; }
-
-  // Reload teams into state
-  const { data } = await STATE.sb.from('teams').select('*').eq('is_active', true).order('name');
-  if (data) STATE.teams = data;
-  showToast('Team registered!');
-  nav('teams_admin');
+  document.getElementById('newsForm').style.display = 'none';
+  nav('news');
 }
 
 // ─────────────────────────────────────────────────────────
@@ -581,14 +628,13 @@ async function saveTeam() {
 // ─────────────────────────────────────────────────────────
 async function saveSettings() {
   const fields = [
-    ['hero_video_url',   document.getElementById('heroUrl')?.value],
-    ['ticker_message',  document.getElementById('tickerMsg')?.value],
-    ['season_label',    document.getElementById('seasonLabel')?.value],
-    ['facebook_url',    document.getElementById('fbUrl')?.value],
-    ['instagram_url',   document.getElementById('igUrl')?.value],
-    ['youtube_url',     document.getElementById('ytUrl')?.value],
-    ['twitter_url',     document.getElementById('twUrl')?.value],
-    ['tiktok_url',      document.getElementById('ttUrl')?.value],
+    ['hero_video_url',  document.getElementById('heroUrl')?.value],
+    ['ticker_message', document.getElementById('tickerMsg')?.value],
+    ['season_label',   document.getElementById('seasonLabel')?.value],
+    ['facebook_url',   document.getElementById('fbUrl')?.value],
+    ['instagram_url',  document.getElementById('igUrl')?.value],
+    ['youtube_url',    document.getElementById('ytUrl')?.value],
+    ['twitter_url',    document.getElementById('twUrl')?.value],
   ].filter(([, v]) => v !== null && v !== undefined);
 
   showToast('Saving...');
@@ -596,32 +642,6 @@ async function saveSettings() {
     await STATE.sb.from('site_settings').upsert({ key, value });
   }
   showToast('Settings saved!');
-}
-
-// ─────────────────────────────────────────────────────────
-// LOAD PORTAL DATA (fixed — direct Supabase)
-// ─────────────────────────────────────────────────────────
-async function loadPortalData() {
-  const [{ data: teams }, { data: schedules }] = await Promise.all([
-    STATE.sb.from('teams').select('*').eq('is_active', true).order('name'),
-    STATE.sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)').order('match_date', { ascending: true }).limit(10),
-  ]);
-  if (teams)     STATE.teams     = teams;
-  if (schedules) STATE.schedules = schedules;
-
-  const live = schedules?.find(m => m.status === 'live');
-  if (live) {
-    STATE.liveMatch = live;
-    STATE.liveH = live.home_score || 0;
-    STATE.liveA = live.away_score || 0;
-    STATE.period = live.current_period || 1;
-    const pill = document.getElementById('sbLivePill');
-    if (pill) pill.textContent = `LIVE — ${live.home_team?.abbr} ${STATE.liveH}:${STATE.liveA} ${live.away_team?.abbr}`;
-    subscribeToLive(live.id);
-  }
-
-  const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
-  if (docs) STATE.docs = docs;
 }
 
 // ─────────────────────────────────────────────────────────
