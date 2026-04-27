@@ -1,4 +1,4 @@
-/ portal.js — KRF Member Portal
+// portal.js — KRF Member Portal
 // Auth, role-based nav, live scoring, uploads, sign-off chain
 
 // ─────────────────────────────────────────────────────────
