@@ -1239,6 +1239,74 @@ async function news() {
         </tbody>
       </table>
     </div>`;
+async function users() {
+  const { data: allUsers } = await STATE.sb
+    .from('users')
+    .select('*, team:teams(name)')
+    .order('created_at', { ascending: false });
+
+  window._allUsers = allUsers || [];
+
+  document.getElementById('mainContent').innerHTML = `
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Add user form coming soon')">+ ADD USER</button>
+      <button class="btn-s" onclick="exportUsersCSV()">Export CSV</button>
+      <input placeholder="Search by name, role or team..." 
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.4rem .75rem;color:var(--white);font-size:.78rem;outline:none;flex:1;min-width:180px" 
+        oninput="filterUsersTable(this.value)"/>
+    </div>
+    ${panel('ALL REGISTERED USERS', (allUsers||[]).length + ' total', `
+      <table class="dt" id="usersTable">
+        <thead><tr><th>Name</th><th>Role</th><th>Team</th><th>Status</th><th>Docs</th><th>Action</th></tr></thead>
+        <tbody id="usersBody">${buildUserRows(allUsers||[])}</tbody>
+      </table>`)}`;
+}
+
+function buildUserRows(users) {
+  return users.map(u => `<tr>
+    <td style="font-weight:500">${u.name||'—'}</td>
+    <td><span class="bdg bdg-${u.role==='admin'?'red':u.role==='commissioner'?'teal':u.role==='referee'?'blue':u.role==='linesman'?'amber':u.role==='official'?'purple':'green'}">${u.role||'player'}</span></td>
+    <td style="font-size:.75rem;color:var(--dim)">${u.team?.name||'Unassigned'}</td>
+    <td><span class="bdg bdg-${u.is_active?'green':'amber'}">${u.is_active?'Active':'Pending'}</span></td>
+    <td><span class="bdg bdg-${u.docs_status==='approved'?'green':u.docs_status==='flagged'?'red':'amber'}">${u.docs_status||'incomplete'}</span></td>
+    <td style="display:flex;gap:.3rem">
+      <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--green)" onclick="approveUser('${u.id}')">✓ Approve</button>
+      <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--red)" onclick="rejectUser('${u.id}')">✗ Flag</button>
+    </td>
+  </tr>`).join('');
+}
+
+function filterUsersTable(q) {
+  const filtered = (window._allUsers||[]).filter(u =>
+    (u.name||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.role||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.team?.name||'').toLowerCase().includes(q.toLowerCase())
+  );
+  const body = document.getElementById('usersBody');
+  if (body) body.innerHTML = buildUserRows(filtered);
+}
+
+async function approveUser(id) {
+  await STATE.sb.from('users').update({ docs_status: 'approved', is_active: true }).eq('id', id);
+  showToast('User approved!');
+  users();
+}
+
+async function rejectUser(id) {
+  await STATE.sb.from('users').update({ docs_status: 'flagged', is_active: false }).eq('id', id);
+  showToast('User flagged');
+  users();
+}
+
+function exportUsersCSV() {
+  const rows = [['Name','Role','Team','Active','Docs']];
+  (window._allUsers||[]).forEach(u => rows.push([u.name,u.role,u.team?.name||'',u.is_active?'Yes':'No',u.docs_status||'incomplete']));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'krf-users.csv';
+  a.click();
+  showToast('CSV exported!');
 }
 </script>
 </body>
