@@ -1285,22 +1285,19 @@ function filterUsersTable(q) {
   const body = document.getElementById('usersBody');
   if (body) body.innerHTML = buildUserRows(filtered);
 }
-
 async function approveUser(id) {
   await STATE.sb.from('users').update({ docs_status: 'approved', is_active: true }).eq('id', id);
   showToast('User approved!');
   users();
 }
-
 async function rejectUser(id) {
   await STATE.sb.from('users').update({ docs_status: 'flagged', is_active: false }).eq('id', id);
   showToast('User flagged');
   users();
 }
-
 function exportUsersCSV() {
   const rows = [['Name','Role','Team','Active','Docs']];
-  (window._allUsers||[]).forEach(u => rows.push([u.name,u.role,u.team?.name||'',u.is_active?'Yes':'No',u.docs_status||'incomplete']));
+  (window._allUsers||[]).forEach(u => rows.push([u.name, u.role, u.team?.name||'', u.is_active?'Yes':'No', u.docs_status||'incomplete']));
   const csv = rows.map(r => r.join(',')).join('\n');
   const a = document.createElement('a');
   a.href = 'data:text/csv,' + encodeURIComponent(csv);
@@ -1308,6 +1305,7 @@ function exportUsersCSV() {
   a.click();
   showToast('CSV exported!');
 }
+
 </script>
 </body>
 </html>
