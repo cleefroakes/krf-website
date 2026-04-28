@@ -1239,7 +1239,9 @@ async function news() {
         </tbody>
       </table>
     </div>`;
-async function users() {
+}
+  
+async function users() 
   const { data: allUsers } = await STATE.sb
     .from('users')
     .select('*, team:teams(name)')
