@@ -1200,21 +1200,20 @@ function schedule() {
       }).join('') : '<div style="color:var(--dim);font-size:.78rem;padding:.5rem 0">No upcoming fixtures scheduled</div>'
 )}`;
 }
-
 async function news() {
   const { data: articles } = await STATE.sb.from('news').select('*').order('created_at', { ascending: false }).limit(20);
   document.getElementById('mainContent').innerHTML = `
     <div style="display:flex;gap:.5rem;margin-bottom:1rem">
       <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="document.getElementById('newsForm').style.display='block'">+ Write Article</button>
     </div>
-   <div id="newsForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+    <div id="newsForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
       <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Title</label><input id="news-title" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="Article title..."/></div>
       <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Tag</label>
         <select id="news-tag" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none">
           <option>News</option><option>Match Report</option><option>Tournament</option><option>Transfer</option><option>Federation</option>
         </select>
       </div>
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Cover Image URL <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="news-cover" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="https://... paste image URL or leave blank"/></div>
+      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Cover Image URL <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="news-cover" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="https://..."/></div>
       <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">YouTube Video URL <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="news-video" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="https://youtube.com/watch?v=..."/></div>
       <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Content</label><textarea id="news-content" rows="6" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none;resize:vertical" placeholder="Write your article here..."></textarea></div>
       <div style="display:flex;gap:.5rem">
@@ -1240,15 +1239,13 @@ async function news() {
       </table>
     </div>`;
 }
-  
-async function users() 
+
+async function users() {
   const { data: allUsers } = await STATE.sb
     .from('users')
     .select('*, team:teams(name)')
     .order('created_at', { ascending: false });
-
   window._allUsers = allUsers || [];
-
   document.getElementById('mainContent').innerHTML = `
     <div style="display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap;align-items:center">
       <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Add user form coming soon')">+ ADD USER</button>
@@ -1287,16 +1284,19 @@ function filterUsersTable(q) {
   const body = document.getElementById('usersBody');
   if (body) body.innerHTML = buildUserRows(filtered);
 }
+
 async function approveUser(id) {
   await STATE.sb.from('users').update({ docs_status: 'approved', is_active: true }).eq('id', id);
   showToast('User approved!');
   users();
 }
+
 async function rejectUser(id) {
   await STATE.sb.from('users').update({ docs_status: 'flagged', is_active: false }).eq('id', id);
   showToast('User flagged');
   users();
 }
+
 function exportUsersCSV() {
   const rows = [['Name','Role','Team','Active','Docs']];
   (window._allUsers||[]).forEach(u => rows.push([u.name, u.role, u.team?.name||'', u.is_active?'Yes':'No', u.docs_status||'incomplete']));
@@ -1307,7 +1307,6 @@ function exportUsersCSV() {
   a.click();
   showToast('CSV exported!');
 }
-
 </script>
 </body>
 </html>
