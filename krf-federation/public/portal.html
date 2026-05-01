@@ -1179,26 +1179,256 @@ function mystats() {
     </div>`;
 }
 
-function schedule() {
-  const upcoming = (STATE.schedules||[]).filter(m=>m.status==='upcoming');
+// ─────────────────────────────────────────────
+// ── SCHEDULE (Admin: full fixture management)
+// ─────────────────────────────────────────────
+async function schedule() {
+  // Fetch fresh data
+  const [{ data: matches }, { data: tournaments }, { data: teams }] = await Promise.all([
+    STATE.sb.from('matches')
+      .select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)')
+      .order('match_date', { ascending: true })
+      .limit(50),
+    STATE.sb.from('tournaments').select('id,name').order('name'),
+    STATE.sb.from('teams').select('id,name,abbr').eq('is_active', true).order('name'),
+  ]);
+  if (matches)     STATE.schedules   = matches;
+  if (tournaments) STATE.tournaments = tournaments;
+  if (teams)       STATE.teams       = teams;
+
+  const isAdmin = STATE.user?.role === 'admin';
+
   document.getElementById('mainContent').innerHTML = `
-    ${panel('UPCOMING FIXTURES','Your team schedule',
-      upcoming.length ? upcoming.map(s=>{
-        const d = s.match_date ? new Date(s.match_date).toLocaleDateString('en-KE',{weekday:'short',day:'numeric',month:'short'}) : 'TBC';
-        const t = s.match_date ? new Date(s.match_date).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'}) : '';
-        return `<div style="display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid rgba(255,255,255,.03)">
-          <div style="text-align:center;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.3rem .55rem;min-width:40px;flex-shrink:0">
-            <div style="font-family:var(--font-head);font-size:1.2rem;color:var(--gold);line-height:1">${new Date(s.match_date||Date.now()).getDate()}</div>
-            <div style="font-size:.5rem;color:var(--muted);text-transform:uppercase">${d.split(',')[0]}</div>
-          </div>
-          <div style="flex:1">
-            <div style="font-size:.83rem;font-weight:600;color:var(--white)">${s.home_team?.name||'TBC'} vs ${s.away_team?.name||'TBC'}</div>
-            <div style="font-size:.7rem;color:var(--dim);margin-top:2px">${t} · ${s.venue||'TBC'} · ${s.tournament?.name||''}</div>
-          </div>
-          <span class="bdg bdg-amber">Upcoming</span>
-        </div>`;
-      }).join('') : '<div style="color:var(--dim);font-size:.78rem;padding:.5rem 0">No upcoming fixtures scheduled</div>'
-)}`;
+    ${isAdmin ? `
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="openFixtureForm()">+ ADD FIXTURE</button>
+      <select id="schedFilterTournament" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.4rem .75rem;color:var(--white);font-size:.78rem;outline:none"
+        onchange="renderFixtureTable()">
+        <option value="">All Tournaments</option>
+        ${(STATE.tournaments||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+      </select>
+      <select id="schedFilterStatus" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.4rem .75rem;color:var(--white);font-size:.78rem;outline:none"
+        onchange="renderFixtureTable()">
+        <option value="">All Statuses</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="live">Live</option>
+        <option value="completed">Completed</option>
+        <option value="postponed">Postponed</option>
+      </select>
+    </div>` : ''}
+
+    <!-- FIXTURE FORM (hidden by default) -->
+    <div id="fixtureFormWrap" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:.65rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem" id="fixtureFormTitle">NEW FIXTURE</div>
+      <input type="hidden" id="fixtureEditId"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="fg"><label>Home Team</label>
+          <select id="fxHome" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="">Select team...</option>
+            ${(STATE.teams||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label>Away Team</label>
+          <select id="fxAway" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="">Select team...</option>
+            ${(STATE.teams||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label>Date & Time</label>
+          <input type="datetime-local" id="fxDate" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+        </div>
+        <div class="fg"><label>Venue</label>
+          <input type="text" id="fxVenue" placeholder="e.g. Nyayo Stadium" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+        </div>
+        <div class="fg"><label>Tournament</label>
+          <select id="fxTournament" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="">Select tournament...</option>
+            ${(STATE.tournaments||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label>Status</label>
+          <select id="fxStatus" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="upcoming">Upcoming</option>
+            <option value="live">Live</option>
+            <option value="completed">Completed</option>
+            <option value="postponed">Postponed</option>
+          </select>
+        </div>
+        <div class="fg" id="fxScoreWrap" style="display:none"><label>Home Score</label>
+          <input type="number" id="fxHomeScore" min="0" value="0" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+        </div>
+        <div class="fg" id="fxScoreWrap2" style="display:none"><label>Away Score</label>
+          <input type="number" id="fxAwayScore" min="0" value="0" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.85rem">
+        <button class="btn-p" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="saveFixture()">SAVE FIXTURE</button>
+        <button class="btn-s" style="font-size:.75rem" onclick="closeFixtureForm()">Cancel</button>
+        <button class="btn-s" id="fxDeleteBtn" style="font-size:.75rem;color:var(--red);border-color:rgba(200,16,46,.4);display:none" onclick="deleteFixture()">Delete</button>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div id="fixtureTableWrap"></div>
+  `;
+
+  // Show/hide score fields when status changes
+  document.getElementById('fxStatus')?.addEventListener('change', function() {
+    const show = this.value === 'completed' || this.value === 'live';
+    document.getElementById('fxScoreWrap').style.display  = show ? '' : 'none';
+    document.getElementById('fxScoreWrap2').style.display = show ? '' : 'none';
+  });
+
+  renderFixtureTable();
+}
+
+function renderFixtureTable() {
+  const filterT = document.getElementById('schedFilterTournament')?.value || '';
+  const filterS = document.getElementById('schedFilterStatus')?.value || '';
+  const isAdmin = STATE.user?.role === 'admin';
+
+  let matches = STATE.schedules || [];
+  if (filterT) matches = matches.filter(m => m.tournament?.id === filterT || m.tournament_id === filterT);
+  if (filterS) matches = matches.filter(m => m.status === filterS);
+
+  const statusBadge = s => {
+    const map = { live:'red', upcoming:'amber', completed:'green', postponed:'gray' };
+    return `<span class="bdg bdg-${map[s]||'gray'}">${s==='live'?'● LIVE':s}</span>`;
+  };
+
+  const wrap = document.getElementById('fixtureTableWrap');
+  if (!wrap) return;
+  wrap.innerHTML = panel('FIXTURES', `${matches.length} matches`, matches.length ? `
+    <table class="dt">
+      <thead><tr>
+        <th>Date</th><th>Home</th><th>Score</th><th>Away</th>
+        <th>Venue</th><th>Tournament</th><th>Status</th>
+        ${isAdmin ? '<th>Actions</th>' : ''}
+      </tr></thead>
+      <tbody>
+        ${matches.map(m => {
+          const d = m.match_date
+            ? new Date(m.match_date).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})
+            : 'TBC';
+          const t = m.match_date
+            ? new Date(m.match_date).toLocaleTimeString('en-KE',{hour:'2-digit',minute:'2-digit'})
+            : '';
+          const score = (m.status === 'completed' || m.status === 'live')
+            ? `<span style="font-family:var(--font-head);font-size:1.05rem;color:var(--gold);letter-spacing:2px">${m.home_score??0} – ${m.away_score??0}</span>`
+            : `<span style="color:var(--muted);font-size:.75rem">vs</span>`;
+          return `<tr>
+            <td style="font-size:.75rem;color:var(--dim);white-space:nowrap">${d}<br/><span style="font-size:.65rem;color:var(--muted)">${t}</span></td>
+            <td style="font-weight:600;font-size:.82rem">${m.home_team?.name||'TBC'}</td>
+            <td style="text-align:center">${score}</td>
+            <td style="font-weight:600;font-size:.82rem">${m.away_team?.name||'TBC'}</td>
+            <td style="font-size:.72rem;color:var(--dim)">${m.venue||'—'}</td>
+            <td style="font-size:.72rem;color:var(--dim)">${m.tournament?.name||'—'}</td>
+            <td>${statusBadge(m.status||'upcoming')}</td>
+            ${isAdmin ? `<td style="display:flex;gap:.3rem">
+              <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="editFixture('${m.id}')">Edit</button>
+              <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--red)" onclick="confirmDeleteFixture('${m.id}')">Delete</button>
+            </td>` : ''}
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  ` : `<div style="padding:2rem;text-align:center;color:var(--dim);font-size:.82rem">No fixtures match your filters.</div>`);
+}
+
+function openFixtureForm(matchId) {
+  document.getElementById('fixtureFormWrap').style.display = 'block';
+  document.getElementById('fixtureEditId').value = '';
+  document.getElementById('fixtureFormTitle').textContent = 'NEW FIXTURE';
+  document.getElementById('fxDeleteBtn').style.display = 'none';
+  // Reset fields
+  ['fxHome','fxAway','fxTournament'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['fxVenue','fxDate'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  document.getElementById('fxStatus').value = 'upcoming';
+  document.getElementById('fxHomeScore').value = '0';
+  document.getElementById('fxAwayScore').value = '0';
+  document.getElementById('fxScoreWrap').style.display = 'none';
+  document.getElementById('fxScoreWrap2').style.display = 'none';
+  document.getElementById('fixtureFormWrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+function editFixture(matchId) {
+  const m = STATE.schedules.find(x => x.id === matchId);
+  if (!m) return;
+  openFixtureForm();
+  document.getElementById('fixtureEditId').value = matchId;
+  document.getElementById('fixtureFormTitle').textContent = 'EDIT FIXTURE';
+  document.getElementById('fxDeleteBtn').style.display = '';
+  document.getElementById('fxHome').value       = m.home_team_id || '';
+  document.getElementById('fxAway').value       = m.away_team_id || '';
+  document.getElementById('fxVenue').value      = m.venue || '';
+  document.getElementById('fxTournament').value = m.tournament_id || '';
+  document.getElementById('fxStatus').value     = m.status || 'upcoming';
+  document.getElementById('fxHomeScore').value  = m.home_score ?? 0;
+  document.getElementById('fxAwayScore').value  = m.away_score ?? 0;
+  if (m.match_date) {
+    document.getElementById('fxDate').value = new Date(m.match_date).toISOString().slice(0,16);
+  }
+  const show = m.status === 'completed' || m.status === 'live';
+  document.getElementById('fxScoreWrap').style.display  = show ? '' : 'none';
+  document.getElementById('fxScoreWrap2').style.display = show ? '' : 'none';
+  document.getElementById('fixtureFormWrap').scrollIntoView({ behavior: 'smooth' });
+}
+
+async function saveFixture() {
+  const editId      = document.getElementById('fixtureEditId')?.value;
+  const home_team_id   = document.getElementById('fxHome')?.value;
+  const away_team_id   = document.getElementById('fxAway')?.value;
+  const match_date     = document.getElementById('fxDate')?.value;
+  const venue          = document.getElementById('fxVenue')?.value;
+  const tournament_id  = document.getElementById('fxTournament')?.value || null;
+  const status         = document.getElementById('fxStatus')?.value || 'upcoming';
+  const home_score     = parseInt(document.getElementById('fxHomeScore')?.value) || 0;
+  const away_score     = parseInt(document.getElementById('fxAwayScore')?.value) || 0;
+
+  if (!home_team_id || !away_team_id) { showToast('Select both teams'); return; }
+  if (home_team_id === away_team_id)  { showToast('Home and away teams must differ'); return; }
+  if (!match_date) { showToast('Set a match date'); return; }
+
+  const payload = {
+    home_team_id, away_team_id,
+    match_date: new Date(match_date).toISOString(),
+    venue, tournament_id, status,
+    home_score, away_score,
+  };
+
+  showToast('Saving...');
+  let error;
+  if (editId) {
+    ({ error } = await STATE.sb.from('matches').update(payload).eq('id', editId));
+  } else {
+    ({ error } = await STATE.sb.from('matches').insert(payload));
+  }
+
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(editId ? 'Fixture updated!' : 'Fixture created!');
+  closeFixtureForm();
+  schedule(); // refresh
+}
+
+function closeFixtureForm() {
+  document.getElementById('fixtureFormWrap').style.display = 'none';
+}
+
+async function confirmDeleteFixture() {
+  const id = document.getElementById('fixtureEditId')?.value;
+  if (!id) return;
+  if (!confirm('Delete this fixture? This cannot be undone.')) return;
+  deleteFixture(id);
+}
+
+async function deleteFixture(id) {
+  const matchId = id || document.getElementById('fixtureEditId')?.value;
+  if (!matchId) return;
+  const { error } = await STATE.sb.from('matches').delete().eq('id', matchId);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Fixture deleted');
+  closeFixtureForm();
+  schedule();
 }
 async function news() {
   const { data: articles } = await STATE.sb.from('news').select('*').order('created_at', { ascending: false }).limit(20);
