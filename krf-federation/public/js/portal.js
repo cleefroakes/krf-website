@@ -602,13 +602,53 @@ async function saveSettings() {
 // LOAD PORTAL DATA (fixed — direct Supabase)
 // ─────────────────────────────────────────────────────────
 async function loadPortalData() {
-  const [{ data: teams }, { data: schedules }] = await Promise.all([
-    STATE.sb.from('teams').select('*').eq('is_active', true).order('name'),
-    STATE.sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name)').order('match_date', { ascending: true }).limit(10),
+  const [
+    { data: teams },
+    { data: schedules },
+    { data: tournamentsData },
+    { data: sponsorsData },
+    { data: siteSettingsData },
+  ] = await Promise.all([
+    STATE.sb.from('teams').select('*, standings(points,played,won,drawn,lost,goals_for,goals_against)').eq('is_active', true).order('name'),
+    STATE.sb.from('matches').select('*, home_team:teams!home_team_id(id,name,abbr,color), away_team:teams!away_team_id(id,name,abbr,color), tournament:tournaments(id,name,type)').order('match_date', { ascending: true }).limit(50),
+    STATE.sb.from('tournaments').select('*').order('name'),
+    STATE.sb.from('sponsors').select('*').eq('is_active', true).order('tier'),
+    STATE.sb.from('site_settings').select('*'),
   ]);
-  if (teams)     STATE.teams     = teams;
-  if (schedules) STATE.schedules = schedules;
 
+  if (teams)            STATE.teams        = teams;
+  if (schedules)        STATE.schedules    = schedules;
+  if (tournamentsData)  STATE.tournaments  = tournamentsData;
+  if (sponsorsData)     STATE.sponsors     = sponsorsData;
+
+  // Convert site_settings array to object
+  if (siteSettingsData) {
+    STATE.siteSettings = {};
+    siteSettingsData.forEach(r => STATE.siteSettings[r.key] = r.value);
+  }
+
+  // Load player stats if player role
+  if (STATE.user?.role === 'player') {
+    const { data: stats } = await STATE.sb
+      .from('player_stats')
+      .select('*')
+      .eq('user_id', STATE.user.id)
+      .eq('season', '2025')
+      .order('games_played', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    STATE.playerStats = stats || { goals: 0, assists: 0, games_played: 0 };
+  }
+
+  // Load officials on duty (users at live match)
+  const { data: officials } = await STATE.sb
+    .from('users')
+    .select('id, name, role')
+    .in('role', ['referee','linesman','commissioner','official'])
+    .eq('is_active', true);
+  STATE.officials = officials || [];
+
+  // Live match
   const live = schedules?.find(m => m.status === 'live');
   if (live) {
     STATE.liveMatch = live;
@@ -618,6 +658,9 @@ async function loadPortalData() {
     const pill = document.getElementById('sbLivePill');
     if (pill) pill.textContent = `LIVE — ${live.home_team?.abbr} ${STATE.liveH}:${STATE.liveA} ${live.away_team?.abbr}`;
     subscribeToLive(live.id);
+  } else {
+    const pill = document.getElementById('sbLivePill');
+    if (pill) pill.textContent = 'No match live right now';
   }
 
   const { data: docs } = await STATE.sb.from('documents').select('*').eq('user_id', STATE.user.id);
