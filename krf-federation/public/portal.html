@@ -1127,34 +1127,168 @@ function gallery() {
     </div>`;
 }
 
-function settings() {
+async function settings() {
+  const ss = STATE.siteSettings || {};
+
   document.getElementById('mainContent').innerHTML = `
     <div class="g2">
-      <div>${panel('PUBLIC SITE','Hero & display',`
-        <div class="fgrid">
-          <div class="fg full"><label>Hero Background Video URL</label><input id="heroUrl" placeholder="https://cdn.../hero.mp4"/></div>
-          <div class="fg full"><label>Upload New Wallpaper / Video</label>
-            <div class="upload-zone" onclick="document.getElementById('heroUploadInput').click()">
-              <div class="uz-icon">🎬</div><p>Upload hero background</p><small>MP4 · 1920×1080 recommended</small>
+      <div>
+        ${panel('PUBLIC SITE BACKGROUND','Hero media',`
+          <div class="fgrid">
+            <div class="fg full">
+              <label>Current Hero Type</label>
+              <select id="heroType" onchange="toggleHeroInputs()" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+                <option value="video" ${!ss.hero_image_url?'selected':''}>Video Background</option>
+                <option value="image" ${ss.hero_image_url?'selected':''}>Image / Wallpaper</option>
+              </select>
             </div>
-            <input type="file" id="heroUploadInput" accept="video/*,image/*" style="display:none" onchange="handleDocUpload(this,'hero')"/>
+            <div class="fg full" id="heroVideoWrap">
+              <label>Video URL (mp4)</label>
+              <input id="heroUrl" value="${ss.hero_video_url||''}" placeholder="https://cdn.../hero.mp4"
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+            </div>
+            <div class="fg full" id="heroImageWrap" style="display:none">
+              <label>Image URL</label>
+              <input id="heroImageUrl" value="${ss.hero_image_url||''}" placeholder="https://cdn.../hero.jpg"
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+            </div>
+            <div class="fg full">
+              <label>Upload New Hero (image or video)</label>
+              <div class="upload-zone" onclick="document.getElementById('heroUploadInput').click()">
+                <div class="uz-icon">🎬</div>
+                <p>Upload hero background</p>
+                <small>MP4 / JPG / PNG / WebP · max 100MB</small>
+              </div>
+              <input type="file" id="heroUploadInput" accept="video/*,image/*" style="display:none" onchange="handleHeroUpload(this)"/>
+            </div>
+            <div class="fg"><label>Ticker Message</label>
+              <input id="tickerMsg" value="${ss.ticker_message||''}" placeholder="Live ticker..."
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+            </div>
+            <div class="fg"><label>Season Label</label>
+              <input id="seasonLabel" value="${ss.season_label||'KPL Season 2025'}"
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/>
+            </div>
+            <div class="fg"><label>Facebook URL</label><input id="fbUrl" value="${ss.facebook_url||''}" placeholder="https://facebook.com/..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+            <div class="fg"><label>Instagram URL</label><input id="igUrl" value="${ss.instagram_url||''}" placeholder="https://instagram.com/..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+            <div class="fg"><label>YouTube URL</label><input id="ytUrl" value="${ss.youtube_url||''}" placeholder="https://youtube.com/..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+            <div class="fg"><label>Twitter / X URL</label><input id="twUrl" value="${ss.twitter_url||''}" placeholder="https://x.com/..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+            <div class="fg"><label>TikTok URL</label><input id="ttUrl" value="${ss.tiktok_url||''}" placeholder="https://tiktok.com/..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
           </div>
-          <div class="fg"><label>Ticker Announcement</label><input placeholder="Live ticker message..."/></div>
-          <div class="fg"><label>Season Label</label><input value="KPL Season 2025"/></div>
-          <div class="fg"><label>Facebook URL</label><input placeholder="https://facebook.com/..."/></div>
-          <div class="fg"><label>Instagram URL</label><input placeholder="https://instagram.com/..."/></div>
-          <div class="fg"><label>YouTube URL</label><input placeholder="https://youtube.com/..."/></div>
-          <div class="fg"><label>Twitter / X URL</label><input placeholder="https://x.com/..."/></div>
-        </div>
-        <button class="btn-p" style="margin-top:.75rem" onclick="showToast('Settings saved!')">SAVE SETTINGS</button>`)}</div>
-      <div>${panel('SPONSORS','Public site',`
-        ${['Safaricom · Title Sponsor','KCB Bank · Gold','Kenya Airways · Gold'].map(s=>`
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:.42rem .6rem;background:var(--bg3);border-radius:5px;font-size:.78rem;margin-bottom:.35rem">
-            <span>${s}</span>
-            <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing sponsor')">Edit</button>
-          </div>`).join('')}
-        <button class="btn-p" style="width:100%;margin-top:.5rem;font-size:.78rem;padding:.5rem" onclick="showToast('Add sponsor form')">+ ADD SPONSOR</button>`)}</div>
+          <button class="btn-p" style="margin-top:.75rem;width:100%" onclick="saveSettings()">SAVE SETTINGS</button>`)}
+      </div>
+      <div>
+        ${panel('SPONSORS','Manage display',`
+          <div id="sponsorsList">${renderSponsorsList()}</div>
+          <div style="margin-top:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.85rem">
+            <div style="font-size:.62rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem">ADD SPONSOR</div>
+            <div class="fgrid">
+              <div class="fg"><label>Name</label><input id="spName" placeholder="Safaricom" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+              <div class="fg"><label>Tier</label>
+                <select id="spTier" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--white);font-size:.82rem;outline:none">
+                  <option value="title">Title Sponsor</option>
+                  <option value="gold">Gold</option>
+                  <option value="silver">Silver</option>
+                  <option value="bronze">Bronze</option>
+                </select>
+              </div>
+              <div class="fg full"><label>Logo URL</label><input id="spLogo" placeholder="https://..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+              <div class="fg full"><label>Or upload logo</label>
+                <div class="upload-zone" style="padding:.6rem" onclick="document.getElementById('spLogoUpload').click()">
+                  <div class="uz-icon" style="font-size:1.2rem">🏷️</div><p style="font-size:.72rem">Click to upload</p>
+                </div>
+                <input type="file" id="spLogoUpload" accept="image/*" style="display:none" onchange="handleSponsorLogoUpload(this)"/>
+              </div>
+              <div class="fg full"><label>Website URL</label><input id="spUrl" placeholder="https://..." style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.5rem .7rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+            </div>
+            <button class="btn-p" style="width:100%;margin-top:.65rem;font-size:.78rem" onclick="addSponsor()">+ ADD SPONSOR</button>
+          </div>`)}
+      </div>
     </div>`;
+
+  toggleHeroInputs();
+}
+
+function toggleHeroInputs() {
+  const type = document.getElementById('heroType')?.value;
+  document.getElementById('heroVideoWrap').style.display = type === 'video' ? '' : 'none';
+  document.getElementById('heroImageWrap').style.display = type === 'image' ? '' : 'none';
+}
+
+function renderSponsorsList() {
+  const sponsors = STATE.sponsors || [];
+  if (!sponsors.length) return '<div style="color:var(--dim);font-size:.78rem;padding:.5rem">No sponsors yet</div>';
+  const tierColor = { title:'bdg-red', gold:'bdg-amber', silver:'bdg-gray', bronze:'bdg-gray' };
+  return sponsors.map(s => `
+    <div style="display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;background:var(--bg3);border-radius:5px;margin-bottom:.35rem">
+      ${s.logo_url ? `<img src="${s.logo_url}" style="height:28px;width:auto;object-fit:contain;border-radius:3px"/>` : '<div style="width:28px;height:28px;background:var(--bg2);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.8rem">🏷️</div>'}
+      <div style="flex:1">
+        <div style="font-size:.78rem;font-weight:600;color:var(--white)">${s.name}</div>
+        <span class="bdg ${tierColor[s.tier]||'bdg-gray'}" style="font-size:.55rem">${s.tier}</span>
+      </div>
+      <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--red)" onclick="removeSponsor('${s.id}')">Remove</button>
+    </div>`).join('');
+}
+
+async function addSponsor() {
+  const name    = document.getElementById('spName')?.value?.trim();
+  const tier    = document.getElementById('spTier')?.value || 'bronze';
+  const logo    = document.getElementById('spLogo')?.value?.trim() || null;
+  const website = document.getElementById('spUrl')?.value?.trim() || null;
+  if (!name) { showToast('Enter sponsor name'); return; }
+
+  showToast('Saving...');
+  const { data, error } = await STATE.sb.from('sponsors').insert({ name, tier, logo_url: logo, website_url: website, is_active: true }).select().single();
+  if (error) { showToast('Error: ' + error.message); return; }
+  STATE.sponsors = [...(STATE.sponsors||[]), data];
+  document.getElementById('sponsorsList').innerHTML = renderSponsorsList();
+  ['spName','spLogo','spUrl'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  showToast('Sponsor added!');
+}
+
+async function removeSponsor(id) {
+  if (!confirm('Remove this sponsor?')) return;
+  await STATE.sb.from('sponsors').update({ is_active: false }).eq('id', id);
+  STATE.sponsors = (STATE.sponsors||[]).filter(s => s.id !== id);
+  document.getElementById('sponsorsList').innerHTML = renderSponsorsList();
+  showToast('Sponsor removed');
+}
+
+async function handleSponsorLogoUpload(inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  showToast('Uploading logo...');
+  const ext = file.name.split('.').pop();
+  const path = `sponsors/${Date.now()}.${ext}`;
+  const { error } = await STATE.sb.storage.from('media').upload(path, file, { upsert: true });
+  if (error) { showToast('Upload failed: ' + error.message); return; }
+  const { data: { publicUrl } } = STATE.sb.storage.from('media').getPublicUrl(path);
+  const logoInput = document.getElementById('spLogo');
+  if (logoInput) logoInput.value = publicUrl;
+  showToast('Logo uploaded!');
+}
+
+async function handleHeroUpload(inputEl) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  showToast('Uploading...');
+  const isVideo = file.type.startsWith('video/');
+  const ext = file.name.split('.').pop();
+  const path = `hero/${Date.now()}.${ext}`;
+  const { error } = await STATE.sb.storage.from('media').upload(path, file, { upsert: true });
+  if (error) { showToast('Upload failed: ' + error.message); return; }
+  const { data: { publicUrl } } = STATE.sb.storage.from('media').getPublicUrl(path);
+  if (isVideo) {
+    const el = document.getElementById('heroUrl');
+    if (el) el.value = publicUrl;
+    document.getElementById('heroType').value = 'video';
+  } else {
+    const el = document.getElementById('heroImageUrl');
+    if (el) el.value = publicUrl;
+    document.getElementById('heroType').value = 'image';
+  }
+  toggleHeroInputs();
+  showToast('Uploaded! Click Save Settings to apply.');
 }
 
 // ─────────────────────────────────────────────
