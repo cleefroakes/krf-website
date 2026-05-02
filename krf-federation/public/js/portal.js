@@ -586,8 +586,10 @@ async function saveTeam() {
 // SITE SETTINGS
 // ─────────────────────────────────────────────────────────
 async function saveSettings() {
+  const heroType = document.getElementById('heroType')?.value;
   const fields = [
-    ['hero_video_url',   document.getElementById('heroUrl')?.value],
+    ['hero_video_url',  heroType === 'video' ? document.getElementById('heroUrl')?.value : ''],
+    ['hero_image_url',  heroType === 'image' ? document.getElementById('heroImageUrl')?.value : ''],
     ['ticker_message',  document.getElementById('tickerMsg')?.value],
     ['season_label',    document.getElementById('seasonLabel')?.value],
     ['facebook_url',    document.getElementById('fbUrl')?.value],
@@ -600,8 +602,9 @@ async function saveSettings() {
   showToast('Saving...');
   for (const [key, value] of fields) {
     await STATE.sb.from('site_settings').upsert({ key, value });
+    if (STATE.siteSettings) STATE.siteSettings[key] = value;
   }
-  showToast('Settings saved!');
+  showToast('Settings saved! Refresh public site to see changes.');
 }
 
 // ─────────────────────────────────────────────────────────
