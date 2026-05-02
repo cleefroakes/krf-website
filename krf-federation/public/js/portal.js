@@ -187,12 +187,13 @@ async function loadPortalData() {
 // ROLE CONFIG
 // ─────────────────────────────────────────────────────────
 const ROLE_CONFIG = {
-  admin:       { label: 'Administrator',    color: '#C8102E', icon: '⭐' },
-  commissioner:{ label: 'Match Commissioner',color: '#0d8a6e', icon: '🏛️' },
-  referee:     { label: 'Referee',           color: '#1a6fc4', icon: '🟥' },
-  linesman:    { label: 'Linesman',          color: '#d4920a', icon: '🚩' },
-  official:    { label: 'Score Official',    color: '#6d3fc4', icon: '🎯' },
-  player:      { label: 'Player',            color: '#27ae60', icon: '🏃' },
+  admin:        { label: 'Administrator',      color: '#C8102E', icon: '⭐' },
+  commissioner: { label: 'Match Commissioner', color: '#0d8a6e', icon: '🏛️' },
+  referee:      { label: 'Referee',            color: '#1a6fc4', icon: '🟥' },
+  linesman:     { label: 'Linesman',           color: '#d4920a', icon: '🚩' },
+  official:     { label: 'Score Official',     color: '#6d3fc4', icon: '🎯' },
+  player:       { label: 'Player',             color: '#27ae60', icon: '🏃' },
+  team_manager: { label: 'Team Manager',       color: '#e67e22', icon: '📋' },
 };
 
 const NAV_MAP = {
@@ -225,6 +226,11 @@ const NAV_MAP = {
   player: [
     { sec: 'My Portal', items: [{ id:'overview',si:'▦',lbl:'Dashboard' },{ id:'profile',si:'◉',lbl:'My Profile' },{ id:'mystats',si:'▣',lbl:'My Stats' },{ id:'schedule',si:'◷',lbl:'Schedule' }] },
     { sec: 'Registration', items: [{ id:'playerreg',si:'◻',lbl:'Registration & Docs' }] },
+  ],
+  team_manager: [
+    { sec: 'My Team', items: [{ id:'overview',si:'▦',lbl:'Dashboard' },{ id:'schedule',si:'◷',lbl:'Schedule' }] },
+    { sec: 'Registration', items: [{ id:'teamreg',si:'◼',lbl:'League Registration' },{ id:'playerreg',si:'◻',lbl:'Register Players' }] },
+    { sec: 'Management', items: [{ id:'teams_admin',si:'▣',lbl:'My Team & Roster' }] },
   ],
 };
 
