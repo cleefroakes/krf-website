@@ -1067,35 +1067,241 @@ function users() {
     </tr>`).join('')}</tbody></table>`)}`;
 }
 
-function teams_admin() {
+async function teams_admin() {
+  const { data: allTeams } = await STATE.sb
+    .from('teams')
+    .select('*, manager:users!teams_manager_id(id,name,email)')
+    .order('name');
+  STATE.teams = allTeams || [];
+
   document.getElementById('mainContent').innerHTML = `
-    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
-      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Create team form')">+ ADD TEAM</button>
-      <button class="btn-s" onclick="showToast('Randomly assigning players...')">Assign Players (Random)</button>
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="openTeamForm()">+ ADD TEAM</button>
     </div>
-    ${panel('REGISTERED TEAMS','',`<table class="dt"><thead><tr><th>Team</th><th>City</th><th>Manager</th><th>Players</th><th>Docs</th><th>Action</th></tr></thead>
-    <tbody>${(STATE.teams||[]).slice(0,8).map(t=>`<tr>
-      <td><div style="display:flex;align-items:center;gap:.5rem"><div style="width:8px;height:8px;border-radius:50%;background:${t.color};flex-shrink:0"></div><span style="font-weight:600">${t.name}</span></div></td>
-      <td style="font-size:.75rem;color:var(--dim)">${t.city}</td>
-      <td style="font-size:.75rem">${t.manager?.name||'—'}</td>
-      <td>${t.standings?.[0]?.played||0}</td>
-      <td><span class="bdg bdg-green">OK</span></td>
-      <td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing ${t.name}')">Manage</button></td>
-    </tr>`).join('')}</tbody></table>`)}`;
+
+    <div id="teamFormWrap" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem" id="teamFormTitle">NEW TEAM</div>
+      <input type="hidden" id="teamEditId"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="fg"><label>Team Name</label><input id="tName" placeholder="Nairobi Bulls" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>Abbreviation</label><input id="tAbbr" placeholder="NBU" maxlength="4" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>City / County</label><input id="tCity" placeholder="Nairobi" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>Home Ground</label><input id="tGround" placeholder="Nyayo Stadium" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>Team Color</label><input type="color" id="tColor" value="#C8102E" style="width:100%;height:38px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.25rem;cursor:pointer"/></div>
+        <div class="fg"><label>Status</label>
+          <select id="tActive" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.85rem">
+        <button class="btn-p" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="saveTeamAdmin()">SAVE TEAM</button>
+        <button class="btn-s" onclick="document.getElementById('teamFormWrap').style.display='none'">Cancel</button>
+        <button class="btn-s" id="teamDeleteBtn" style="display:none;color:var(--red)" onclick="deleteTeam()">Delete</button>
+      </div>
+    </div>
+
+    ${panel('REGISTERED TEAMS', `${STATE.teams.length} teams`, `
+      <table class="dt">
+        <thead><tr><th>Team</th><th>City</th><th>Ground</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${STATE.teams.map(t=>`<tr>
+          <td><div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:10px;height:10px;border-radius:50%;background:${t.color||'#888'};flex-shrink:0"></div>
+            <span style="font-weight:600">${t.name}</span>
+            <span style="font-size:.65rem;color:var(--muted)">${t.abbr||''}</span>
+          </div></td>
+          <td style="font-size:.75rem;color:var(--dim)">${t.city||'—'}</td>
+          <td style="font-size:.75rem;color:var(--dim)">${t.home_ground||'—'}</td>
+          <td><span class="bdg bdg-${t.is_active?'green':'amber'}">${t.is_active?'Active':'Inactive'}</span></td>
+          <td style="display:flex;gap:.3rem">
+            <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="editTeam('${t.id}')">Edit</button>
+          </td>
+        </tr>`).join('')}
+        </tbody>
+      </table>`)}`;
 }
 
-function tournaments() {
+function openTeamForm() {
+  document.getElementById('teamFormWrap').style.display = 'block';
+  document.getElementById('teamEditId').value = '';
+  document.getElementById('teamFormTitle').textContent = 'NEW TEAM';
+  document.getElementById('teamDeleteBtn').style.display = 'none';
+  ['tName','tAbbr','tCity','tGround'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('tColor').value = '#C8102E';
+  document.getElementById('tActive').value = 'true';
+  document.getElementById('teamFormWrap').scrollIntoView({ behavior:'smooth' });
+}
+
+function editTeam(id) {
+  const t = STATE.teams.find(x => x.id === id);
+  if (!t) return;
+  openTeamForm();
+  document.getElementById('teamEditId').value = id;
+  document.getElementById('teamFormTitle').textContent = 'EDIT TEAM';
+  document.getElementById('teamDeleteBtn').style.display = '';
+  document.getElementById('tName').value   = t.name || '';
+  document.getElementById('tAbbr').value   = t.abbr || '';
+  document.getElementById('tCity').value   = t.city || '';
+  document.getElementById('tGround').value = t.home_ground || '';
+  document.getElementById('tColor').value  = t.color || '#C8102E';
+  document.getElementById('tActive').value = t.is_active ? 'true' : 'false';
+  document.getElementById('teamFormWrap').scrollIntoView({ behavior:'smooth' });
+}
+
+async function saveTeamAdmin() {
+  const id     = document.getElementById('teamEditId')?.value;
+  const name   = document.getElementById('tName')?.value?.trim();
+  const abbr   = document.getElementById('tAbbr')?.value?.trim().toUpperCase();
+  const city   = document.getElementById('tCity')?.value?.trim();
+  const ground = document.getElementById('tGround')?.value?.trim();
+  const color  = document.getElementById('tColor')?.value;
+  const active = document.getElementById('tActive')?.value === 'true';
+  if (!name || !abbr) { showToast('Name and abbreviation required'); return; }
+
+  showToast('Saving...');
+  const payload = { name, abbr, city, home_ground: ground, color, is_active: active };
+  let error;
+  if (id) {
+    ({ error } = await STATE.sb.from('teams').update(payload).eq('id', id));
+  } else {
+    ({ error } = await STATE.sb.from('teams').insert(payload));
+  }
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(id ? 'Team updated!' : 'Team created!');
+  document.getElementById('teamFormWrap').style.display = 'none';
+  teams_admin();
+}
+
+async function deleteTeam() {
+  const id = document.getElementById('teamEditId')?.value;
+  if (!id || !confirm('Delete this team? This cannot be undone.')) return;
+  const { error } = await STATE.sb.from('teams').update({ is_active: false }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Team deactivated');
+  document.getElementById('teamFormWrap').style.display = 'none';
+  teams_admin();
+}
+
+async function tournaments() {
+  const { data: allTournaments } = await STATE.sb
+    .from('tournaments').select('*').order('created_at', { ascending: false });
+  STATE.tournaments = allTournaments || [];
+
   document.getElementById('mainContent').innerHTML = `
-    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
-      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Create tournament')">+ CREATE</button>
-      <button class="btn-s" onclick="showToast('Import fixtures')">Import Fixtures</button>
+    <div style="display:flex;gap:.5rem;margin-bottom:.8rem;flex-wrap:wrap">
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="openTournamentForm()">+ CREATE</button>
     </div>
-    ${panel('ALL TOURNAMENTS','',`<table class="dt"><thead><tr><th>Name</th><th>Status</th><th>Teams</th><th>Rounds</th><th>Action</th></tr></thead>
-    <tbody>
-      <tr><td style="font-weight:600">KPL Championship 2025</td><td><span class="bdg bdg-red">● Ongoing</span></td><td>12</td><td>11</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing KPL')">Manage</button></td></tr>
-      <tr><td style="font-weight:600">KRF National Cup</td><td><span class="bdg bdg-red">● Ongoing</span></td><td>16</td><td>5</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing Cup')">Manage</button></td></tr>
-      <tr><td style="font-weight:600">U-23 National League</td><td><span class="bdg bdg-amber">Upcoming</span></td><td>8</td><td>7</td><td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Managing U23')">Manage</button></td></tr>
-    </tbody></table>`)}`;
+
+    <div id="tournamentFormWrap" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+      <div style="font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem" id="tFormTitle">NEW COMPETITION</div>
+      <input type="hidden" id="tEditId"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+        <div class="fg"><label>Name</label><input id="tName" placeholder="KPL Championship 2025" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>Type</label>
+          <select id="tType" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="league">League — registered by Team Managers</option>
+            <option value="tournament">Tournament — admin managed</option>
+          </select>
+        </div>
+        <div class="fg"><label>Season</label><input id="tSeason" value="2025" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+        <div class="fg"><label>Status</label>
+          <select id="tStatus" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+            <option value="upcoming">Upcoming</option>
+            <option value="active">Active / Ongoing</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="fg full"><label>Description</label><input id="tDesc" placeholder="Brief description..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.85rem">
+        <button class="btn-p" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="saveTournament()">SAVE</button>
+        <button class="btn-s" onclick="document.getElementById('tournamentFormWrap').style.display='none'">Cancel</button>
+        <button class="btn-s" id="tDeleteBtn" style="display:none;color:var(--red)" onclick="deleteTournament()">Delete</button>
+      </div>
+    </div>
+
+    <div class="g2">
+      <div>
+        ${panel('LEAGUES','Team Manager registration', renderTournamentTable('league', STATE.tournaments))}
+      </div>
+      <div>
+        ${panel('TOURNAMENTS','Admin managed', renderTournamentTable('tournament', STATE.tournaments))}
+      </div>
+    </div>`;
+}
+
+function renderTournamentTable(type, list) {
+  const filtered = list.filter(t => t.type === type);
+  if (!filtered.length) return `<div style="color:var(--dim);font-size:.78rem;padding:.5rem">No ${type}s yet</div>`;
+  const statusColor = { active:'bdg-red', upcoming:'bdg-amber', completed:'bdg-green' };
+  return `<table class="dt"><thead><tr><th>Name</th><th>Season</th><th>Status</th><th></th></tr></thead><tbody>
+    ${filtered.map(t => `<tr>
+      <td style="font-weight:600">${t.name}</td>
+      <td style="font-size:.72rem;color:var(--dim)">${t.season||'—'}</td>
+      <td><span class="bdg ${statusColor[t.status]||'bdg-gray'}">${t.status==='active'?'● Active':t.status||'upcoming'}</span></td>
+      <td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="editTournament('${t.id}')">Edit</button></td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function openTournamentForm() {
+  document.getElementById('tournamentFormWrap').style.display = 'block';
+  document.getElementById('tEditId').value = '';
+  document.getElementById('tFormTitle').textContent = 'NEW COMPETITION';
+  document.getElementById('tDeleteBtn').style.display = 'none';
+  ['tName','tDesc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('tSeason').value = '2025';
+  document.getElementById('tType').value = 'league';
+  document.getElementById('tStatus').value = 'upcoming';
+  document.getElementById('tournamentFormWrap').scrollIntoView({ behavior:'smooth' });
+}
+
+function editTournament(id) {
+  const t = STATE.tournaments.find(x => x.id === id);
+  if (!t) return;
+  openTournamentForm();
+  document.getElementById('tEditId').value = id;
+  document.getElementById('tFormTitle').textContent = 'EDIT COMPETITION';
+  document.getElementById('tDeleteBtn').style.display = '';
+  document.getElementById('tName').value   = t.name || '';
+  document.getElementById('tType').value   = t.type || 'league';
+  document.getElementById('tSeason').value = t.season || '2025';
+  document.getElementById('tStatus').value = t.status || 'upcoming';
+  document.getElementById('tDesc').value   = t.description || '';
+}
+
+async function saveTournament() {
+  const id     = document.getElementById('tEditId')?.value;
+  const name   = document.getElementById('tName')?.value?.trim();
+  const type   = document.getElementById('tType')?.value;
+  const season = document.getElementById('tSeason')?.value?.trim();
+  const status = document.getElementById('tStatus')?.value;
+  const desc   = document.getElementById('tDesc')?.value?.trim();
+  if (!name) { showToast('Enter a name'); return; }
+
+  showToast('Saving...');
+  const payload = { name, type, season, status, description: desc };
+  let error;
+  if (id) {
+    ({ error } = await STATE.sb.from('tournaments').update(payload).eq('id', id));
+  } else {
+    ({ error } = await STATE.sb.from('tournaments').insert(payload));
+  }
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast(id ? 'Updated!' : 'Created!');
+  document.getElementById('tournamentFormWrap').style.display = 'none';
+  tournaments();
+}
+
+async function deleteTournament() {
+  const id = document.getElementById('tEditId')?.value;
+  if (!id || !confirm('Delete this competition?')) return;
+  const { error } = await STATE.sb.from('tournaments').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Deleted');
+  document.getElementById('tournamentFormWrap').style.display = 'none';
+  tournaments();
 }
 
 function gallery() {
