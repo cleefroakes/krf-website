@@ -569,47 +569,155 @@ function live() {
 // ─────────────────────────────────────────────
 // ── LINEUP
 // ─────────────────────────────────────────────
-function lineup() {
-  const positions = [
-    {pos:'Centre Man',name:'Karuri P.',num:10},
-    {pos:'Winger Right',name:'Otieno B.',num:7},
-    {pos:'Winger Left',name:'Mutua J.',num:8},
-    {pos:'Front Right',name:'Kamau P.',num:9},
-    {pos:'Front Left',name:'Njeri S.',num:11},
-  ];
+async function lineup() {
+  const isAdmin = STATE.user?.role === 'admin';
+  const isTM    = STATE.user?.role === 'team_manager';
+
+  // Fetch all matches for selection
+  const { data: matchList } = await STATE.sb
+    .from('matches')
+    .select('id, match_date, home_team:teams!home_team_id(id,name), away_team:teams!away_team_id(id,name), tournament:tournaments(name)')
+    .in('status', ['upcoming','live'])
+    .order('match_date', { ascending: true })
+    .limit(10);
+
+  // Fetch players for the TM's team or all players for admin
+  const teamId = STATE.user?.team_id;
+  let playerQuery = STATE.sb.from('users').select('id,name,jersey_number,position').eq('role','player').eq('is_active',true);
+  if (isTM && teamId) playerQuery = playerQuery.eq('team_id', teamId);
+  const { data: players } = await playerQuery.order('jersey_number');
+
+  const POSITIONS = ['Centre Man','Winger Right','Winger Left','Front Right','Front Left'];
+
   document.getElementById('mainContent').innerHTML = `
     <div class="g2">
       <div>
-        ${panel('STARTING LINEUP','5 positions · Rollball',`
-          <div style="background:var(--bg3);border-radius:8px;padding:1rem;margin-bottom:.75rem">
-            <div style="font-size:.58rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.65rem;text-align:center">Starting Five</div>
-            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem">
-              ${positions.map(p=>`
-                <div style="background:var(--bg4);border:1px solid rgba(244,169,0,.2);border-radius:5px;padding:.5rem .3rem;text-align:center;cursor:pointer" onclick="showToast('Edit: ${p.name}')">
-                  <div style="font-size:.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:.2rem">${p.pos.split(' ')[0]}</div>
-                  <div style="font-family:var(--font-head);font-size:1.2rem;color:var(--gold);line-height:1">${p.num}</div>
-                  <div style="font-size:.68rem;color:var(--white);margin-top:.15rem">${p.name.split(' ')[0]}</div>
-                </div>`).join('')}
-            </div>
+        ${panel('SUBMIT LINEUP', isTM ? 'Your team' : 'Select match & team', `
+          <div class="fg" style="margin-bottom:.75rem">
+            <label>Match</label>
+            <select id="lineupMatchId" onchange="loadExistingLineup()"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+              <option value="">— Select match —</option>
+              ${(matchList||[]).map(m => {
+                const d = m.match_date ? new Date(m.match_date).toLocaleDateString('en-KE',{day:'numeric',month:'short'}) : 'TBC';
+                return `<option value="${m.id}">${m.home_team?.name||'?'} vs ${m.away_team?.name||'?'} · ${d}</option>`;
+              }).join('')}
+            </select>
           </div>
-          <button class="btn-p" style="width:100%;font-size:.78rem;padding:.5rem" onclick="showToast('Lineup submitted!')">SUBMIT LINEUP</button>`)}
+          ${!isTM ? `
+          <div class="fg" style="margin-bottom:.75rem">
+            <label>Team Side</label>
+            <select id="lineupSide"
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+              <option value="home">Home Team</option>
+              <option value="away">Away Team</option>
+            </select>
+          </div>` : ''}
+
+          <div style="margin:.75rem 0;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted)">Starting Five</div>
+          <div style="display:grid;gap:.5rem" id="positionSlots">
+            ${POSITIONS.map(pos => `
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.55rem .85rem;display:flex;align-items:center;gap:.65rem">
+                <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;width:90px;flex-shrink:0">${pos}</div>
+                <select data-pos="${pos}"
+                  style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:.4rem .65rem;color:var(--white);font-size:.78rem;outline:none">
+                  <option value="">— Select player —</option>
+                  ${(players||[]).map(p=>`<option value="${p.id}">#${p.jersey_number||'?'} ${p.name}</option>`).join('')}
+                </select>
+              </div>`).join('')}
+          </div>
+
+          <div class="fg" style="margin-top:.75rem">
+            <label>Notes for referee</label>
+            <textarea id="lineupNotes" rows="2" placeholder="Any lineup notes, late changes..."
+              style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none;resize:vertical"></textarea>
+          </div>
+
+          <div style="display:flex;gap:.5rem;margin-top:.85rem">
+            <button class="btn-p" style="flex:1" onclick="submitLineup()">SUBMIT LINEUP</button>
+            <button class="btn-s" onclick="showToast('Draft saved locally')">Save Draft</button>
+          </div>
+          <div id="lineupStatus" style="margin-top:.5rem"></div>
+        `)}
       </div>
       <div>
-        ${panel('JERSEY NUMBERS','Update & confirm',`
-          <table class="dt">
-            <thead><tr><th>#</th><th>Player</th><th>Position</th><th></th></tr></thead>
-            <tbody>${positions.map(p=>`
-              <tr>
-                <td><span style="font-family:var(--font-head);font-size:1.1rem;color:var(--gold)">${p.num}</span></td>
-                <td style="font-weight:500;font-size:.8rem">${p.name}</td>
-                <td><span class="bdg bdg-gray">${p.pos}</span></td>
-                <td><button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing #${p.num}')">Edit</button></td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-          <button class="btn-p" style="width:100%;margin-top:.75rem;font-size:.78rem;padding:.5rem" onclick="showToast('Numbers updated!')">UPDATE NUMBERS</button>`)}
+        ${panel('SUBMITTED LINEUPS', 'This fixture', `
+          <div id="lineupPreview" style="color:var(--dim);font-size:.78rem;padding:.5rem 0">
+            Select a match to see submitted lineups.
+          </div>`)}
       </div>
     </div>`;
+}
+
+async function loadExistingLineup() {
+  const matchId = document.getElementById('lineupMatchId')?.value;
+  if (!matchId) return;
+  const preview = document.getElementById('lineupPreview');
+  if (preview) preview.innerHTML = '<div style="color:var(--dim);font-size:.78rem">Loading...</div>';
+
+  const { data: lineups } = await STATE.sb
+    .from('lineups')
+    .select('*, player:users(name,jersey_number), submitted_by:users!lineups_submitted_by_fkey(name,role)')
+    .eq('match_id', matchId);
+
+  if (!lineups || !lineups.length) {
+    if (preview) preview.innerHTML = '<div style="color:var(--dim);font-size:.78rem;padding:.5rem">No lineups submitted yet for this match.</div>';
+    return;
+  }
+
+  const grouped = {};
+  lineups.forEach(l => {
+    const side = l.team_side || 'home';
+    if (!grouped[side]) grouped[side] = [];
+    grouped[side].push(l);
+  });
+
+  if (preview) preview.innerHTML = Object.entries(grouped).map(([side, entries]) => `
+    <div style="margin-bottom:.85rem">
+      <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:.45rem">${side} team lineup</div>
+      <table class="dt">
+        <thead><tr><th>#</th><th>Player</th><th>Position</th></tr></thead>
+        <tbody>${entries.map(e=>`<tr>
+          <td style="font-family:var(--font-head);color:var(--gold)">${e.player?.jersey_number||'?'}</td>
+          <td style="font-weight:500">${e.player?.name||'—'}</td>
+          <td><span class="bdg bdg-gray" style="font-size:.6rem">${e.position||'—'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="font-size:.62rem;color:var(--muted);margin-top:.3rem">
+        Submitted by ${entries[0]?.submitted_by?.name||'—'} · ${entries[0]?.submitted_by?.role||''}
+      </div>
+    </div>`).join('');
+}
+
+async function submitLineup() {
+  const matchId = document.getElementById('lineupMatchId')?.value;
+  if (!matchId) { showToast('Select a match first'); return; }
+
+  const isTM   = STATE.user?.role === 'team_manager';
+  const side   = isTM ? 'home' : (document.getElementById('lineupSide')?.value || 'home');
+  const notes  = document.getElementById('lineupNotes')?.value || '';
+  const slots  = document.querySelectorAll('#positionSlots select[data-pos]');
+
+  const entries = [];
+  let missing = false;
+  slots.forEach(sel => {
+    if (!sel.value) { missing = true; return; }
+    entries.push({ match_id: matchId, player_id: sel.value, position: sel.dataset.pos, team_side: side, notes, submitted_by: STATE.user.id });
+  });
+
+  if (missing) { showToast('Select a player for every position'); return; }
+
+  showToast('Submitting lineup...');
+  // Delete existing lineup for this match/side first
+  await STATE.sb.from('lineups').delete().eq('match_id', matchId).eq('team_side', side).eq('submitted_by', STATE.user.id);
+  const { error } = await STATE.sb.from('lineups').insert(entries);
+
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  document.getElementById('lineupStatus').innerHTML =
+    '<div style="padding:.5rem .75rem;background:var(--green-dim);border-radius:5px;font-size:.72rem;color:#4cd97b">✓ Lineup submitted successfully!</div>';
+  showToast('Lineup submitted!');
+  loadExistingLineup();
 }
 
 // ─────────────────────────────────────────────
