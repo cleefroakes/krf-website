@@ -290,29 +290,60 @@ function overview() {
   overviewAdmin();
 }
 
-function overviewAdmin() {
+async function overviewAdmin() {
+  // Fetch real counts
+  const [
+    { count: playerCount },
+    { count: pendingCount },
+    { count: matchCount },
+  ] = await Promise.all([
+    STATE.sb.from('users').select('*', { count: 'exact', head: true }).eq('role', 'player'),
+    STATE.sb.from('users').select('*', { count: 'exact', head: true }).eq('is_active', false),
+    STATE.sb.from('matches').select('*', { count: 'exact', head: true }),
+  ]);
+
+  const officials = STATE.officials || [];
+  const roleColor = { referee:'bdg-blue', linesman:'bdg-amber', commissioner:'bdg-teal', official:'bdg-purple' };
+
   document.getElementById('mainContent').innerHTML = `
     <div class="stat-row">
-      <div class="sc" style="--sc-color:var(--red)"><div class="v">${STATE.teams?.length||12}</div><div class="l">Teams</div><div class="ch ch-neu">All registered</div></div>
-      <div class="sc" style="--sc-color:var(--gold)"><div class="v">186</div><div class="l">Players</div><div class="ch ch-warn">↑ 12 pending</div></div>
-      <div class="sc" style="--sc-color:var(--green)"><div class="v">58</div><div class="l">Matches</div><div class="ch ch-up">↑ Season running</div></div>
-      <div class="sc" style="--sc-color:var(--blue)"><div class="v">6</div><div class="l">Officials</div><div class="ch ch-neu">3 at live match</div></div>
+      <div class="sc" style="--sc-color:var(--red)">
+        <div class="v">${STATE.teams?.length || 0}</div><div class="l">Teams</div>
+        <div class="ch ch-neu">All registered</div>
+      </div>
+      <div class="sc" style="--sc-color:var(--gold)">
+        <div class="v">${playerCount || 0}</div><div class="l">Players</div>
+        <div class="ch ch-warn">↑ ${pendingCount || 0} pending</div>
+      </div>
+      <div class="sc" style="--sc-color:var(--green)">
+        <div class="v">${matchCount || 0}</div><div class="l">Matches</div>
+        <div class="ch ch-up">↑ Season running</div>
+      </div>
+      <div class="sc" style="--sc-color:var(--blue)">
+        <div class="v">${officials.length}</div><div class="l">Officials</div>
+        <div class="ch ch-neu">Active roster</div>
+      </div>
     </div>
     <div class="g2">
       <div>
         ${panel('LIVE MATCH','● Now', scoreMiniHTML()+`<button class="btn-p" style="width:100%;margin-top:.65rem;font-size:.78rem;padding:.5rem" onclick="nav('live')">OPEN LIVE PANEL</button>`)}
-        ${panel('OFFICIALS ON DUTY','Today',`
-          <table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead><tbody>
-            <tr><td style="font-weight:500">Dr. Grace Njoroge</td><td><span class="bdg bdg-teal">Commissioner</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
-            <tr><td style="font-weight:500">Peter Omondi</td><td><span class="bdg bdg-blue">Referee</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
-            <tr><td style="font-weight:500">Mary Chebet</td><td><span class="bdg bdg-amber">Linesman</span></td><td><span class="bdg bdg-green">Active</span></td></tr>
-          </tbody></table>`)}
+        ${panel('OFFICIALS ROSTER','Active',
+          officials.length
+            ? `<table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Status</th></tr></thead><tbody>
+                ${officials.map(o=>`<tr>
+                  <td style="font-weight:500">${o.name||'—'}</td>
+                  <td><span class="bdg ${roleColor[o.role]||'bdg-gray'}">${o.role}</span></td>
+                  <td><span class="bdg bdg-green">Active</span></td>
+                </tr>`).join('')}
+              </tbody></table>`
+            : '<div style="color:var(--dim);font-size:.78rem;padding:.5rem">No officials on roster yet</div>'
+        )}
       </div>
       <div>
         ${panel('QUICK ACTIONS','Admin shortcuts',`
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
             ${[['users','👥','Manage Users'],['teams_admin','⚽','Teams'],['tournaments','🏆','Tournaments'],
-               ['gallery','📸','Gallery'],['playerreg','📝','Registration'],['settings','⚙️','Settings']
+               ['gallery','📸','Gallery'],['schedule','📅','Fixtures'],['settings','⚙️','Settings']
               ].map(([p,i,l])=>`
               <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:.7rem;cursor:pointer;transition:all .2s"
                    onclick="nav('${p}')" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -327,15 +358,16 @@ function overviewAdmin() {
 
 function overviewPlayer() {
   const docs = getCurrentDocs();
+  const st = STATE.playerStats || {};
   document.getElementById('mainContent').innerHTML = `
     <div class="prof-head">
       <div class="prof-av" style="background:var(--green-dim);color:var(--green);border-color:rgba(39,174,96,.4)">
-        ${STATE.user?.initials||'PL'}
+        ${STATE.user?.initials || (STATE.user?.name||'PL').split(' ').map(n=>n[0]).join('').toUpperCase()}
         <div class="prof-cam" onclick="triggerDocUpload('passport_photo')">📷</div>
       </div>
       <div>
         <div class="pname">${STATE.user?.name||'Player'}</div>
-        <div class="ppos">${STATE.user?.position||'Position'} · ${STATE.user?.teams?.name||'Team'} · #${STATE.user?.jersey_number||'—'}</div>
+        <div class="ppos">${STATE.user?.position||'Position'} · ${STATE.user?.team?.name||STATE.user?.teams?.name||'No Team'} · #${STATE.user?.jersey_number||'—'}</div>
         <div class="ptags">
           <span class="bdg bdg-green">KPL 2025</span>
           <span class="bdg bdg-${STATE.user?.docs_status==='approved'?'green':STATE.user?.docs_status==='flagged'?'red':'amber'}">${STATE.user?.docs_status||'incomplete'}</span>
@@ -343,9 +375,9 @@ function overviewPlayer() {
       </div>
     </div>
     <div class="stat-row">
-      <div class="sc" style="--sc-color:var(--red)"><div class="v">—</div><div class="l">Goals</div><div class="ch ch-neu">This season</div></div>
-      <div class="sc" style="--sc-color:var(--gold)"><div class="v">—</div><div class="l">Games</div><div class="ch ch-neu">Played</div></div>
-      <div class="sc" style="--sc-color:var(--green)"><div class="v">—</div><div class="l">Assists</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--red)"><div class="v">${st.goals ?? '—'}</div><div class="l">Goals</div><div class="ch ch-neu">This season</div></div>
+      <div class="sc" style="--sc-color:var(--gold)"><div class="v">${st.games_played ?? '—'}</div><div class="l">Games</div><div class="ch ch-neu">Played</div></div>
+      <div class="sc" style="--sc-color:var(--green)"><div class="v">${st.assists ?? '—'}</div><div class="l">Assists</div><div class="ch ch-neu">This season</div></div>
       <div class="sc" style="--sc-color:var(--blue)"><div class="v">—</div><div class="l">Rank</div><div class="ch ch-neu">League standing</div></div>
     </div>
     <div class="g2">
