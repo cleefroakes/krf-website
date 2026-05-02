@@ -1039,32 +1039,226 @@ function mydocs() {
 // ─────────────────────────────────────────────
 // ── ADMIN PAGES
 // ─────────────────────────────────────────────
-function users() {
+async function users() {
+  const { data: allUsers } = await STATE.sb
+    .from('users')
+    .select('*, team:teams(id,name)')
+    .order('created_at', { ascending: false });
+  window._allUsers = allUsers || [];
+
+  const pending = window._allUsers.filter(u => !u.is_active);
+  const active  = window._allUsers.filter(u =>  u.is_active);
+
   document.getElementById('mainContent').innerHTML = `
-    <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
-      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="showToast('Add user form')">+ ADD USER</button>
-      <button class="btn-s" onclick="showToast('Export CSV')">Export CSV</button>
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+      <button class="btn-s" onclick="exportUsersCSV()">Export CSV</button>
+      <input placeholder="Search name, role or team..."
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.4rem .75rem;color:var(--white);font-size:.78rem;outline:none;flex:1;min-width:180px"
+        oninput="filterUsersTable(this.value)"/>
     </div>
-    ${panel('ALL USERS','',`<table class="dt"><thead><tr><th>Name</th><th>Role</th><th>Team</th><th>Status</th><th>Docs</th><th>Action</th></tr></thead>
-    <tbody>${[
-      ['John Kamau','admin','Federation HQ','active'],
-      ['Dr. Grace Njoroge','commissioner','Commissioner','active'],
-      ['Peter Omondi','referee','Senior Referee','active'],
-      ['Mary Chebet','linesman','Asst. Referee','active'],
-      ['Sarah Ochieng','official','Score Official','active'],
-      ['Kevin Ochieng','player','Nairobi Bulls','active'],
-      ['Brian Mutua','player','Kisumu Kings','pending'],
-    ].map(u=>`<tr>
-      <td style="font-weight:500">${u[0]}</td>
-      <td><span class="bdg bdg-${u[1]==='admin'?'red':u[1]==='commissioner'?'teal':u[1]==='referee'?'blue':u[1]==='linesman'?'amber':u[1]==='official'?'purple':'green'}">${u[1]}</span></td>
-      <td style="font-size:.75rem;color:var(--dim)">${u[2]}</td>
-      <td><span class="bdg bdg-${u[3]==='active'?'green':'amber'}">${u[3]}</span></td>
-      <td style="font-size:.7rem;color:var(--dim)">—</td>
-      <td style="display:flex;gap:.3rem">
-        <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="showToast('Editing ${u[0]}')">Edit</button>
-        <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--green)" onclick="showToast('Approved!')">✓</button>
-      </td>
-    </tr>`).join('')}</tbody></table>`)}`;
+
+    <!-- PENDING APPROVAL -->
+    ${pending.length ? `
+    <div style="margin-bottom:1.25rem">
+      <div style="font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);font-weight:600;margin-bottom:.6rem">
+        ⏳ PENDING APPROVAL — ${pending.length} registrations
+      </div>
+      <div style="display:grid;gap:.5rem" id="pendingList">
+        ${buildPendingCards(pending)}
+      </div>
+    </div>` : `
+    <div style="background:var(--bg2);border:1px solid rgba(39,174,96,.2);border-radius:6px;padding:.65rem 1rem;font-size:.75rem;color:var(--green);margin-bottom:1rem">
+      ✓ No pending approvals
+    </div>`}
+
+    <!-- ALL USERS TABLE -->
+    ${panel('ALL USERS', `${window._allUsers.length} total`, `
+      <table class="dt" id="usersTable">
+        <thead><tr><th>Name</th><th>Role</th><th>Team</th><th>Status</th><th>Docs</th><th>Actions</th></tr></thead>
+        <tbody id="usersBody">${buildUserRows(window._allUsers)}</tbody>
+      </table>`)}
+
+    <!-- EDIT USER MODAL -->
+    <div id="userEditWrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:center;justify-content:center">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:1.5rem;width:min(480px,90vw);max-height:90vh;overflow-y:auto">
+        <div style="font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:1rem">EDIT USER</div>
+        <input type="hidden" id="editUserId"/>
+        <div class="fgrid">
+          <div class="fg"><label>Full Name</label><input id="editUserName" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none"/></div>
+          <div class="fg"><label>Role</label>
+            <select id="editUserRole" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+              <option value="player">Player</option>
+              <option value="team_manager">Team Manager</option>
+              <option value="referee">Referee</option>
+              <option value="linesman">Linesman</option>
+              <option value="official">Score Official</option>
+              <option value="commissioner">Commissioner</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <div class="fg"><label>Assign Team</label>
+            <select id="editUserTeam" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+              <option value="">— No team —</option>
+              ${(STATE.teams||[]).map(t=>`<option value="${t.id}">${t.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="fg"><label>Docs Status</label>
+            <select id="editUserDocs" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.82rem;outline:none">
+              <option value="incomplete">Incomplete</option>
+              <option value="approved">Approved</option>
+              <option value="flagged">Flagged</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:1rem">
+          <button class="btn-p" style="flex:1" onclick="saveUserEdit()">SAVE CHANGES</button>
+          <button class="btn-s" onclick="closeUserEdit()">Cancel</button>
+          <button class="btn-s" style="color:var(--red)" onclick="deactivateUser()">Deactivate</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildPendingCards(users) {
+  const roleColor = { player:'green', team_manager:'amber', referee:'blue', linesman:'amber', official:'purple', commissioner:'teal', admin:'red' };
+  return users.map(u => `
+    <div style="background:var(--bg2);border:1px solid rgba(212,146,10,.3);border-radius:8px;padding:.85rem 1rem;display:flex;align-items:center;gap:.85rem;flex-wrap:wrap">
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;color:var(--amber);flex-shrink:0">
+        ${(u.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)}
+      </div>
+      <div style="flex:1;min-width:140px">
+        <div style="font-size:.82rem;font-weight:600;color:var(--white)">${u.name||'—'}</div>
+        <div style="font-size:.68rem;color:var(--dim)">${u.email||''}</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.15rem">Registered ${u.created_at ? new Date(u.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}) : '—'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.3rem;min-width:140px">
+        <select onchange="quickAssignRole('${u.id}', this.value)"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.35rem .6rem;color:var(--white);font-size:.72rem;outline:none;width:100%">
+          <option value="${u.role||'player'}" selected>${u.role||'player'}</option>
+          <option value="player">Player</option>
+          <option value="team_manager">Team Manager</option>
+          <option value="referee">Referee</option>
+          <option value="linesman">Linesman</option>
+          <option value="official">Score Official</option>
+          <option value="commissioner">Commissioner</option>
+        </select>
+        <select onchange="quickAssignTeam('${u.id}', this.value)"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.35rem .6rem;color:var(--white);font-size:.72rem;outline:none;width:100%">
+          <option value="">— Assign team —</option>
+          ${(STATE.teams||[]).map(t=>`<option value="${t.id}" ${u.team_id===t.id?'selected':''}>${t.name}</option>`).join('')}
+        </select>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-shrink:0">
+        <button class="btn-p" style="font-size:.68rem;padding:.35rem .8rem;background:var(--green)" onclick="approveUser('${u.id}')">✓ Approve</button>
+        <button class="btn-s" style="font-size:.68rem;padding:.35rem .7rem;color:var(--red)" onclick="rejectUser('${u.id}')">✗ Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+function buildUserRows(users) {
+  const roleColor = { admin:'red', commissioner:'teal', referee:'blue', linesman:'amber', official:'purple', team_manager:'amber', player:'green' };
+  return users.map(u => `<tr>
+    <td style="font-weight:500">${u.name||'—'}</td>
+    <td><span class="bdg bdg-${roleColor[u.role]||'gray'}">${u.role||'player'}</span></td>
+    <td style="font-size:.75rem;color:var(--dim)">${u.team?.name||'—'}</td>
+    <td><span class="bdg bdg-${u.is_active?'green':'amber'}">${u.is_active?'Active':'Pending'}</span></td>
+    <td><span class="bdg bdg-${u.docs_status==='approved'?'green':u.docs_status==='flagged'?'red':'amber'}">${u.docs_status||'incomplete'}</span></td>
+    <td style="display:flex;gap:.3rem">
+      <button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem" onclick="openUserEdit('${u.id}')">Edit</button>
+      ${!u.is_active ? `<button class="btn-s" style="font-size:.6rem;padding:.18rem .45rem;color:var(--green)" onclick="approveUser('${u.id}')">✓</button>` : ''}
+    </td>
+  </tr>`).join('');
+}
+
+function filterUsersTable(q) {
+  const filtered = (window._allUsers||[]).filter(u =>
+    (u.name||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.role||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.team?.name||'').toLowerCase().includes(q.toLowerCase())
+  );
+  const body = document.getElementById('usersBody');
+  if (body) body.innerHTML = buildUserRows(filtered);
+}
+
+async function quickAssignRole(userId, role) {
+  await STATE.sb.from('users').update({ role }).eq('id', userId);
+  const u = (window._allUsers||[]).find(x => x.id === userId);
+  if (u) u.role = role;
+}
+
+async function quickAssignTeam(userId, teamId) {
+  await STATE.sb.from('users').update({ team_id: teamId || null }).eq('id', userId);
+  const u = (window._allUsers||[]).find(x => x.id === userId);
+  if (u) u.team_id = teamId;
+}
+
+function openUserEdit(userId) {
+  const u = (window._allUsers||[]).find(x => x.id === userId);
+  if (!u) return;
+  document.getElementById('editUserId').value    = userId;
+  document.getElementById('editUserName').value  = u.name || '';
+  document.getElementById('editUserRole').value  = u.role || 'player';
+  document.getElementById('editUserTeam').value  = u.team_id || '';
+  document.getElementById('editUserDocs').value  = u.docs_status || 'incomplete';
+  const wrap = document.getElementById('userEditWrap');
+  wrap.style.display = 'flex';
+}
+
+function closeUserEdit() {
+  document.getElementById('userEditWrap').style.display = 'none';
+}
+
+async function saveUserEdit() {
+  const id       = document.getElementById('editUserId')?.value;
+  const name     = document.getElementById('editUserName')?.value?.trim();
+  const role     = document.getElementById('editUserRole')?.value;
+  const team_id  = document.getElementById('editUserTeam')?.value || null;
+  const docs_status = document.getElementById('editUserDocs')?.value;
+  if (!id) return;
+
+  showToast('Saving...');
+  const { error } = await STATE.sb.from('users').update({ name, role, team_id, docs_status }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message); return; }
+
+  const u = (window._allUsers||[]).find(x => x.id === id);
+  if (u) Object.assign(u, { name, role, team_id, docs_status });
+  showToast('User updated!');
+  closeUserEdit();
+  users();
+}
+
+async function approveUser(id) {
+  await STATE.sb.from('users').update({ is_active: true }).eq('id', id);
+  showToast('User approved!');
+  users();
+}
+
+async function rejectUser(id) {
+  if (!confirm('Reject and deactivate this user?')) return;
+  await STATE.sb.from('users').update({ is_active: false, docs_status: 'flagged' }).eq('id', id);
+  showToast('User rejected');
+  users();
+}
+
+async function deactivateUser() {
+  const id = document.getElementById('editUserId')?.value;
+  if (!id || !confirm('Deactivate this user?')) return;
+  await STATE.sb.from('users').update({ is_active: false }).eq('id', id);
+  showToast('User deactivated');
+  closeUserEdit();
+  users();
+}
+
+function exportUsersCSV() {
+  const rows = [['Name','Role','Team','Active','Docs']];
+  (window._allUsers||[]).forEach(u => rows.push([u.name, u.role, u.team?.name||'', u.is_active?'Yes':'No', u.docs_status||'incomplete']));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv,' + encodeURIComponent(csv);
+  a.download = 'krf-users.csv';
+  a.click();
+  showToast('CSV exported!');
 }
 
 async function teams_admin() {
