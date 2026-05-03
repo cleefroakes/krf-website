@@ -538,6 +538,7 @@ async function publishNews() {
   const tag     = document.getElementById('news-tag')?.value || 'News';
   const cover   = document.getElementById('news-cover')?.value?.trim() || null;
   const video   = document.getElementById('news-video')?.value?.trim() || null;
+  const gallery = document.getElementById('news-gallery')?.value || null;
   if (!title || !content) { showToast('Please fill in title and content'); return; }
 
   showToast('Publishing...');
@@ -545,15 +546,14 @@ async function publishNews() {
     title, content, tag,
     cover_image_url: cover,
     video_url: video,
+    gallery_urls: gallery ? JSON.parse(gallery) : null,
     published: true,
     published_at: new Date().toISOString(),
     author_id: STATE.user.id,
   });
   if (error) { showToast('Error: ' + error.message); return; }
-  showToast('Article published and live on site!');
-  const form = document.getElementById('newsForm');
-  if (form) form.style.display = 'none';
-  nav('overview');
+  showToast('Article published!');
+  news();
 }
 
 // ─────────────────────────────────────────────────────────
