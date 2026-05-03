@@ -401,12 +401,53 @@ function deactivateTournamentBg() {
 // RENDER: FIXTURES
 // ─────────────────────────────────────────────────────────
 let fixtureFilter = 'all';
-function renderFixtures() {
+let fixtureSlideTimer = null;
+let fixtureSlideIndex = 0;
+
+async function renderFixtures() {
+  // Slideshow
+  const photos = await api('media', { type: 'photo', limit: 12 });
+  const slides = document.getElementById('fhSlides');
+  const dots   = document.getElementById('fhDots');
+
+  if (slides && photos?.length) {
+    slides.innerHTML = photos.map((p, i) =>
+      `<div class="fh-slide ${i===0?'active':''}" style="background-image:url('${p.file_url}');position:absolute;inset:0;background-size:cover;background-position:center;opacity:${i===0?1:0};transition:opacity .8s ease"></div>`
+    ).join('');
+    if (dots) dots.innerHTML = photos.map((_, i) =>
+      `<div class="fh-dot ${i===0?'active':''}" onclick="goToSlide(${i})" style="width:6px;height:6px;border-radius:50%;background:${i===0?'var(--gold)':'rgba(255,255,255,.35)'};cursor:pointer;transition:background .3s"></div>`
+    ).join('');
+    clearInterval(fixtureSlideTimer);
+    fixtureSlideIndex = 0;
+    fixtureSlideTimer = setInterval(() => {
+      fixtureSlideIndex = (fixtureSlideIndex + 1) % photos.length;
+      goToSlide(fixtureSlideIndex);
+    }, 4000);
+  } else if (slides) {
+    slides.innerHTML = `<div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a0008,#0d0d1a,#0a1a0a)"></div>`;
+  }
+
+  // Fixture cards
   const list = fixtureFilter === 'all' ? STATE.matches : STATE.matches?.filter(m => m.status === fixtureFilter);
   const el = document.getElementById('fixturesList');
   if (!el) return;
-  el.innerHTML = (list || []).map(matchCardHTML).join('') || '<p style="color:var(--dim);padding:1rem">No matches found</p>';
+  el.innerHTML = (list||[]).map(matchCardHTML).join('') || '<p style="color:var(--dim);padding:1rem">No matches found</p>';
 }
+
+function goToSlide(index) {
+  const slides = document.querySelectorAll('.fh-slide');
+  const dots   = document.querySelectorAll('.fh-dot');
+  slides.forEach((s, i) => {
+    s.style.opacity = i === index ? '1' : '0';
+    s.classList.toggle('active', i === index);
+  });
+  dots.forEach((d, i) => {
+    d.style.background = i === index ? 'var(--gold)' : 'rgba(255,255,255,.35)';
+    d.classList.toggle('active', i === index);
+  });
+  fixtureSlideIndex = index;
+}
+
 function filterFixtures(f, btn) {
   fixtureFilter = f;
   document.querySelectorAll('#fixtures .tab').forEach(b => b.classList.remove('active'));
@@ -702,10 +743,154 @@ function setGalleryTab(tab, btn) {
   STATE.galleryActiveTab = tab;
   document.querySelectorAll('#gallery .tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  ['photosPanel','videosPanel'].forEach(p => { const el = document.getElementById(p); if (el) el.style.display = 'none'; });
-  const active = document.getElementById(tab === 'photos' ? 'photosPanel' : 'videosPanel');
+  const panelMap = { photos:'photosPanel', highlights:'highlightsPanel', goalrush:'goalrushPanel', live:'livePanel' };
+  ['photosPanel','highlightsPanel','goalrushPanel','livePanel'].forEach(p => {
+    const el = document.getElementById(p); if (el) el.style.display = 'none';
+  });
+  const active = document.getElementById(panelMap[tab]);
   if (active) active.style.display = 'block';
   renderGallery();
+}
+
+async function renderGallery() {
+  const tab = STATE.galleryActiveTab || 'photos';
+  if      (tab === 'photos')     await loadPhotos();
+  else if (tab === 'highlights') await loadVideosByCategory('Match Highlights', 'highlightsGrid', 'highlights');
+  else if (tab === 'goalrush')   await loadVideosByCategory('Goal Rush', 'goalrushGrid', 'goalrush');
+  else if (tab === 'live')       renderLiveStream();
+}
+
+async function loadPhotos() {
+  const grid = document.getElementById('galleryGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="color:var(--dim);padding:1rem;font-size:.82rem">Loading photos...</div>';
+  const photos = await api('media', { type: 'photo', limit: 40 });
+  const heights = [140,200,160,180,220,150,190,170,210,155,185,175,230,145,195,165,215,185,160,200];
+
+  if (!photos?.length) {
+    grid.innerHTML = '<p style="color:var(--dim);padding:1rem;font-size:.85rem">No photos yet — upload from the Admin Portal</p>';
+    return;
+  }
+  grid.innerHTML = photos.map((p, i) => `
+    <div class="gallery-tile" onclick="openLightbox('${p.file_url}','${(p.title||'').replace(/'/g,"\\'")}')"
+      style="cursor:zoom-in">
+      <div class="gallery-tile-inner" style="height:${heights[i%heights.length]}px;background:url('${p.file_url}') center/cover no-repeat;position:relative">
+        ${p.title ? `<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:.5rem .6rem;font-size:.7rem;color:var(--white)">${p.title}</div>` : ''}
+      </div>
+      <div class="gallery-tile-overlay"></div>
+    </div>`).join('');
+}
+
+function openLightbox(url, caption) {
+  if (!url) return;
+  const lb = document.getElementById('photoLightbox');
+  const img = document.getElementById('lightboxImg');
+  const cap = document.getElementById('lightboxCaption');
+  if (!lb || !img) return;
+  img.src = url;
+  if (cap) cap.textContent = caption || '';
+  lb.classList.add('open');
+  lb.style.display = 'flex';
+}
+
+async function loadVideosByCategory(categoryLabel, gridId, badgeClass) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = '<div style="color:var(--dim);padding:1rem;font-size:.82rem">Loading...</div>';
+
+  const { data: videos } = await sb.from('media')
+    .select('*')
+    .eq('approved', true)
+    .eq('media_type', 'video')
+    .ilike('category', `%${categoryLabel}%`)
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (!videos?.length) {
+    grid.innerHTML = `<p style="color:var(--dim);padding:1rem;font-size:.85rem">No ${categoryLabel} videos yet — upload from the Admin Portal</p>`;
+    return;
+  }
+  grid.innerHTML = videos.map(v => buildVideoCard(v, badgeClass)).join('');
+}
+
+async function loadVideos() {
+  // kept for backwards compat — routes to highlights
+  await loadVideosByCategory('Match Highlights', 'highlightsGrid', 'highlights');
+}
+
+function buildVideoCard(v, badgeClass) {
+  let embedUrl = null;
+  if (v.file_url?.includes('youtube.com/watch')) {
+    const videoId = new URL(v.file_url).searchParams.get('v');
+    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  } else if (v.file_url?.includes('youtu.be/')) {
+    const videoId = v.file_url.split('youtu.be/')[1].split('?')[0];
+    embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  }
+  const thumbBase = embedUrl ? embedUrl.replace('embed/','vi/').replace('?autoplay=1','') : null;
+  const thumb = v.thumbnail_url || (thumbBase ? thumbBase + '/hqdefault.jpg' : null);
+  const catColors = { highlights:'background:rgba(26,111,196,.2);color:#4d9fe8;border:1px solid rgba(26,111,196,.3)', goalrush:'background:rgba(200,16,46,.2);color:#e84d4d;border:1px solid rgba(200,16,46,.3)', live:'background:rgba(39,174,96,.2);color:#4cd97b;border:1px solid rgba(39,174,96,.3)' };
+  return `<div class="video-tile">
+    <div class="video-thumb" id="vthumb-${v.id}" onclick="playVideoCard('${v.id}')" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;background:var(--dark2);cursor:pointer">
+      ${thumb ? `<img src="${thumb}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2.5rem">🎬</div>`}
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+        <div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:1.2rem">▶</div>
+      </div>
+    </div>
+    <div class="video-info" style="padding:.6rem 0">
+      <span style="display:inline-block;font-size:.55rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:2px;margin-bottom:.35rem;${catColors[badgeClass]||''}">${v.category||badgeClass}</span>
+      <h4 style="margin:.2rem 0 .15rem;font-size:.88rem;color:var(--white)">${v.title||'Match Video'}</h4>
+      <small style="color:var(--muted);font-size:.68rem">${v.created_at?new Date(v.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'}):''}</small>
+    </div>
+    <div class="video-player" id="vplayer-${v.id}" style="display:none;position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;margin-top:.35rem">
+      ${embedUrl
+        ? `<iframe src="${embedUrl}" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="autoplay"></iframe>`
+        : `<video controls autoplay style="position:absolute;inset:0;width:100%;height:100%" src="${v.file_url}"></video>`}
+    </div>
+  </div>`;
+}
+
+function playVideoCard(id) {
+  const thumb  = document.getElementById('vthumb-'  + id);
+  const player = document.getElementById('vplayer-' + id);
+  if (!player) return;
+  const isOpen = player.style.display !== 'none';
+  document.querySelectorAll('[id^="vplayer-"]').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('[id^="vthumb-"]').forEach(t => t.style.display = 'block');
+  if (!isOpen) { player.style.display = 'block'; if (thumb) thumb.style.display = 'none'; }
+}
+
+function renderLiveStream() {
+  const wrap = document.getElementById('liveStreamWrap');
+  if (!wrap) return;
+  const streamUrl = STATE.settings.live_stream_url || null;
+  const rtmpUrl   = STATE.settings.live_rtmp_url   || 'rtmp://stream.krfkenya.co.ke/live';
+  wrap.innerHTML = `
+    <div style="background:linear-gradient(135deg,rgba(39,174,96,.08),transparent);border:1px solid rgba(39,174,96,.2);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+      <div>
+        <div style="font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:#4cd97b;margin-bottom:.3rem">📡 Live Stream</div>
+        <div style="font-size:.82rem;color:var(--dim)">${STATE.liveMatch?`● LIVE NOW: ${STATE.liveMatch.home_team?.name} vs ${STATE.liveMatch.away_team?.name}`:'No match live right now — stream will appear when a match goes live'}</div>
+      </div>
+      ${STATE.liveMatch?`<div style="display:flex;align-items:center;gap:.4rem"><div class="live-dot"></div><span style="font-size:.75rem;color:#4cd97b;font-weight:600">BROADCASTING</span></div>`:''}
+    </div>
+    ${streamUrl ? `
+    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;margin-bottom:1.25rem;border:1px solid var(--border)">
+      ${streamUrl.includes('youtube')||streamUrl.includes('youtu.be')
+        ? `<iframe src="${streamUrl.replace('watch?v=','embed/').replace('youtu.be/','youtube.com/embed/')}?autoplay=1" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="autoplay"></iframe>`
+        : `<video controls autoplay style="position:absolute;inset:0;width:100%;height:100%" src="${streamUrl}"></video>`}
+    </div>` : `
+    <div style="position:relative;padding-bottom:56.25%;height:0;background:var(--dark2);border:1px solid var(--border);border-radius:8px;margin-bottom:1.25rem;overflow:hidden">
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem">
+        <div style="font-size:3rem;opacity:.2">📡</div>
+        <div style="font-size:.85rem;color:var(--dim)">Stream offline</div>
+        <div style="font-size:.7rem;color:var(--muted)">Set stream URL in Site Settings via Admin Portal</div>
+      </div>
+    </div>`}
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:6px;padding:.85rem 1.1rem">
+      <div style="font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem">BROADCAST INFO</div>
+      <div style="font-size:.75rem;color:var(--dim);margin-bottom:.3rem">RTMP Ingest: <span style="font-family:monospace;color:var(--gold)">${rtmpUrl}</span></div>
+      <div style="font-size:.72rem;color:var(--muted)">Stream key provided to official broadcasters only.</div>
+    </div>`;
 }
 
 // ─────────────────────────────────────────────────────────
