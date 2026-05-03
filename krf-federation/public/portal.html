@@ -2105,45 +2105,168 @@ async function deleteFixture(id) {
   schedule();
 }
 async function news() {
-  const { data: articles } = await STATE.sb.from('news').select('*').order('created_at', { ascending: false }).limit(20);
+  const { data: articles } = await STATE.sb
+    .from('news').select('*').order('created_at', { ascending: false }).limit(20);
+
   document.getElementById('mainContent').innerHTML = `
     <div style="display:flex;gap:.5rem;margin-bottom:1rem">
-      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem" onclick="document.getElementById('newsForm').style.display='block'">+ Write Article</button>
+      <button class="btn-p" style="font-size:.75rem;padding:.45rem 1rem"
+        onclick="document.getElementById('newsForm').style.display='block';this.style.display='none'">+ Write Article</button>
     </div>
+
     <div id="newsForm" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Title</label><input id="news-title" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="Article title..."/></div>
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Tag</label>
-        <select id="news-tag" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none">
-          <option>News</option><option>Match Report</option><option>Tournament</option><option>Transfer</option><option>Federation</option>
-        </select>
+      <div style="font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.85rem">NEW ARTICLE</div>
+      <div class="fgrid">
+        <div class="fg"><label>Title</label>
+          <input id="news-title" placeholder="Article title..."
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none"/>
+        </div>
+        <div class="fg"><label>Tag</label>
+          <select id="news-tag"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none">
+            <option>News</option><option>Match Report</option><option>Tournament</option><option>Transfer</option><option>Federation</option>
+          </select>
+        </div>
+
+        <!-- COVER IMAGE -->
+        <div class="fg full">
+          <label>Cover Photo</label>
+          <div style="display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap">
+            <div class="upload-zone" style="flex:1;min-width:160px;padding:.65rem"
+              onclick="document.getElementById('newsCoverUpload').click()">
+              <div class="uz-icon" style="font-size:1.3rem">📷</div>
+              <p style="font-size:.72rem">Upload cover image</p>
+              <small>JPG PNG WebP · max 10MB</small>
+            </div>
+            <input type="file" id="newsCoverUpload" accept="image/*" style="display:none"
+              onchange="handleNewsMediaUpload(this,'cover')"/>
+            <div style="flex:1;min-width:160px">
+              <input id="news-cover" placeholder="Or paste image URL..."
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.78rem;outline:none"/>
+              <div id="newsCoverPreview" style="margin-top:.4rem"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIDEO -->
+        <div class="fg full">
+          <label>Video</label>
+          <div style="display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap">
+            <div class="upload-zone" style="flex:1;min-width:160px;padding:.65rem"
+              onclick="document.getElementById('newsVideoUpload').click()">
+              <div class="uz-icon" style="font-size:1.3rem">🎬</div>
+              <p style="font-size:.72rem">Upload video</p>
+              <small>MP4 MOV · max 500MB</small>
+            </div>
+            <input type="file" id="newsVideoUpload" accept="video/*" style="display:none"
+              onchange="handleNewsMediaUpload(this,'video')"/>
+            <div style="flex:1;min-width:160px">
+              <input id="news-video" placeholder="Or paste video URL..."
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.55rem .75rem;color:var(--white);font-size:.78rem;outline:none"/>
+              <div id="newsVideoPreview" style="margin-top:.4rem;font-size:.68rem;color:var(--dim)"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXTRA PHOTOS -->
+        <div class="fg full">
+          <label>Additional Photos <span style="color:var(--muted);font-weight:400">(optional, up to 6)</span></label>
+          <div class="upload-zone" style="padding:.65rem" onclick="document.getElementById('newsGalleryUpload').click()">
+            <div class="uz-icon" style="font-size:1.3rem">🖼️</div>
+            <p style="font-size:.72rem">Upload gallery photos</p>
+            <small>Select multiple</small>
+          </div>
+          <input type="file" id="newsGalleryUpload" accept="image/*" multiple style="display:none"
+            onchange="handleNewsGalleryUpload(this)"/>
+          <div id="newsGalleryPreview" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem"></div>
+          <input type="hidden" id="news-gallery"/>
+        </div>
+
+        <div class="fg full"><label>Content</label>
+          <textarea id="news-content" rows="7"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none;resize:vertical"
+            placeholder="Write your article here..."></textarea>
+        </div>
       </div>
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Cover Image URL <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="news-cover" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="https://..."/></div>
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">YouTube Video URL <span style="color:var(--muted);font-weight:400">(optional)</span></label><input id="news-video" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none" placeholder="https://youtube.com/watch?v=..."/></div>
-      <div class="fg" style="margin-bottom:.75rem"><label style="font-size:.65rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:.3rem">Content</label><textarea id="news-content" rows="6" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:.6rem .85rem;color:var(--white);font-size:.85rem;outline:none;resize:vertical" placeholder="Write your article here..."></textarea></div>
-      <div style="display:flex;gap:.5rem">
+
+      <div style="display:flex;gap:.5rem;margin-top:.85rem">
         <button class="btn-p" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="publishNews()">Publish Now →</button>
-        <button class="btn-s" style="font-size:.75rem;padding:.45rem 1.25rem" onclick="document.getElementById('newsForm').style.display='none'">Cancel</button>
+        <button class="btn-s" style="font-size:.75rem" onclick="document.getElementById('newsForm').style.display='none'">Cancel</button>
       </div>
     </div>
+
+    <!-- ARTICLES TABLE -->
     <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="background:var(--bg3)">
           <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Title</th>
+          <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Media</th>
           <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Tag</th>
           <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Date</th>
           <th style="text-align:left;padding:.65rem .85rem;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)">Status</th>
         </tr></thead>
-        <tbody>${articles?.length ? articles.map(a => `<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
-          <td style="padding:.7rem .85rem;font-size:.82rem;font-weight:500">${a.title}</td>
-          <td style="padding:.7rem .85rem"><span style="background:rgba(244,169,0,.15);color:var(--gold);border:1px solid rgba(244,169,0,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.tag || 'News'}</span></td>
-          <td style="padding:.7rem .85rem;font-size:.72rem;color:var(--muted)">${new Date(a.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}</td>
-          <td style="padding:.7rem .85rem"><span style="background:rgba(0,154,77,.15);color:#00c962;border:1px solid rgba(0,154,77,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.published ? 'Published' : 'Draft'}</span></td>
-        </tr>`).join('') : '<tr><td colspan="4" style="padding:2rem;text-align:center;color:var(--muted);font-size:.82rem">No articles yet — write your first one!</td></tr>'}
+        <tbody>${articles?.length ? articles.map(a => `
+          <tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+            <td style="padding:.7rem .85rem;font-size:.82rem;font-weight:500">${a.title}</td>
+            <td style="padding:.7rem .85rem">
+              ${a.cover_image_url ? '<span title="Has cover photo">🖼️</span>' : ''}
+              ${a.video_url ? '<span title="Has video">🎬</span>' : ''}
+              ${a.gallery_urls ? '<span title="Has gallery">📷</span>' : ''}
+            </td>
+            <td style="padding:.7rem .85rem">
+              <span style="background:rgba(244,169,0,.15);color:var(--gold);border:1px solid rgba(244,169,0,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.tag||'News'}</span>
+            </td>
+            <td style="padding:.7rem .85rem;font-size:.72rem;color:var(--muted)">${new Date(a.created_at).toLocaleDateString('en-KE',{day:'numeric',month:'short',year:'numeric'})}</td>
+            <td style="padding:.7rem .85rem">
+              <span style="background:rgba(0,154,77,.15);color:#00c962;border:1px solid rgba(0,154,77,.3);font-size:.58rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:2px">${a.published?'Published':'Draft'}</span>
+            </td>
+          </tr>`).join('') :
+          '<tr><td colspan="5" style="padding:2rem;text-align:center;color:var(--muted);font-size:.82rem">No articles yet</td></tr>'}
         </tbody>
       </table>
     </div>`;
 }
 
+async function handleNewsMediaUpload(inputEl, type) {
+  const file = inputEl.files[0];
+  if (!file) return;
+  showToast('Uploading...');
+  const ext  = file.name.split('.').pop();
+  const path = `news/${type}s/${Date.now()}.${ext}`;
+  const { error } = await STATE.sb.storage.from('media').upload(path, file, { upsert: true });
+  if (error) { showToast('Upload failed: ' + error.message); return; }
+  const { data: { publicUrl } } = STATE.sb.storage.from('media').getPublicUrl(path);
+
+  if (type === 'cover') {
+    document.getElementById('news-cover').value = publicUrl;
+    document.getElementById('newsCoverPreview').innerHTML =
+      `<img src="${publicUrl}" style="height:60px;border-radius:4px;border:1px solid var(--border);object-fit:cover"/>`;
+  } else {
+    document.getElementById('news-video').value = publicUrl;
+    document.getElementById('newsVideoPreview').textContent = '✓ Video uploaded: ' + file.name;
+  }
+  showToast(type === 'cover' ? 'Cover uploaded!' : 'Video uploaded!');
+}
+
+async function handleNewsGalleryUpload(inputEl) {
+  const files = Array.from(inputEl.files).slice(0, 6);
+  if (!files.length) return;
+  showToast(`Uploading ${files.length} photo(s)...`);
+  const urls = [];
+  for (const file of files) {
+    const ext  = file.name.split('.').pop();
+    const path = `news/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await STATE.sb.storage.from('media').upload(path, file, { upsert: true });
+    if (error) continue;
+    const { data: { publicUrl } } = STATE.sb.storage.from('media').getPublicUrl(path);
+    urls.push(publicUrl);
+  }
+  document.getElementById('news-gallery').value = JSON.stringify(urls);
+  document.getElementById('newsGalleryPreview').innerHTML = urls.map(u =>
+    `<img src="${u}" style="height:52px;width:52px;object-fit:cover;border-radius:4px;border:1px solid var(--border)"/>`
+  ).join('');
+  showToast(`${urls.length} photo(s) ready!`);
+}
 async function users() {
   const { data: allUsers } = await STATE.sb
     .from('users')
