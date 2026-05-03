@@ -89,7 +89,7 @@ async function loadAll() {
   const [teams, tournaments, matches, news, sponsors, settings] = await Promise.all([
     api('teams'),
     api('tournaments'),
-    apiMatches('list', { limit: 20 }),
+    apiMatches('list', { limit: 50 }),
     api('news', { limit: 10 }),
     api('sponsors'),
     api('settings'),
@@ -100,13 +100,34 @@ async function loadAll() {
   if (matches)     STATE.matches     = matches;
   if (news)        STATE.news        = news;
   if (sponsors)    STATE.sponsors    = sponsors;
-  if (settings)    STATE.settings    = Object.fromEntries((settings || []).map(s => [s.key, s.value]));
+  if (settings)    STATE.settings    = Object.fromEntries((settings||[]).map(s=>[s.key,s.value]));
 
-  // Load standings for first active tournament
-  const active = STATE.tournaments.find(t => t.status === 'ongoing');
+  // Real hero stats
+  const [{ count: playerCount }, { count: matchCount }] = await Promise.all([
+    sb.from('users').select('*',{count:'exact',head:true}).eq('role','player').eq('is_active',true),
+    sb.from('matches').select('*',{count:'exact',head:true}),
+  ]);
+  const el = id => document.getElementById(id);
+  if (el('heroTeams'))   el('heroTeams').textContent   = STATE.teams?.length || 0;
+  if (el('heroPlayers')) el('heroPlayers').textContent = playerCount || 0;
+  if (el('heroTours'))   el('heroTours').textContent   = STATE.tournaments?.length || 0;
+  if (el('heroMatches')) el('heroMatches').textContent = matchCount || 0;
+
+  // Standings for first active tournament
+  const active = STATE.tournaments.find(t => t.status === 'ongoing' || t.status === 'active');
   if (active) {
     STATE.standings[active.id] = await apiMatches('standings', { tournament_id: active.id });
   }
+
+  // Live match
+  const live = STATE.matches?.filter(m => m.status === 'live');
+  if (live?.length) STATE.liveMatch = live[0];
+
+  applyHeroBackground();
+  initTicker();
+  renderPage(STATE.currentPage);
+  window.dispatchEvent(new Event('krf-data-loaded'));
+}
 
   // Live match
   const live = STATE.matches?.filter(m => m.status === 'live');
@@ -117,11 +138,19 @@ async function loadAll() {
   initTicker();
   renderPage(STATE.currentPage);
 }
-
 function applyHeroBackground() {
   const videoUrl = STATE.settings.hero_video_url;
+  const imageUrl = STATE.settings.hero_image_url;
   const vid = document.getElementById('heroBgVideo');
-  if (vid && videoUrl) { vid.src = videoUrl; vid.load(); }
+
+  if (videoUrl) {
+    if (vid) { vid.src = videoUrl; vid.load(); }
+  } else if (imageUrl) {
+    // Use image as background instead
+    const heroBg = document.getElementById('heroBg');
+    if (heroBg) heroBg.style.backgroundImage = `url('${imageUrl}')`;
+    if (vid) vid.style.display = 'none';
+  }
 }
 
 // ─────────────────────────────────────────────────────────
