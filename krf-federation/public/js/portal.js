@@ -139,17 +139,68 @@ function doLogout() {
 // BOOT
 // ─────────────────────────────────────────────────────────
 async function bootPortal() {
+  const u = STATE.user;
+
+  // ── PENDING ACCOUNT GATE ──────────────────────────────
+  if (!u.is_active) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+
+    const r = ROLE_CONFIG[u.role] || ROLE_CONFIG.player;
+    document.getElementById('sbAv').textContent       = (u.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    document.getElementById('sbAv').style.background  = r.color + '18';
+    document.getElementById('sbAv').style.color       = r.color;
+    document.getElementById('sbAv').style.borderColor = r.color + '44';
+    document.getElementById('sbName').textContent     = u.name || u.email;
+    document.getElementById('sbRole').textContent     = 'Pending Approval';
+    document.getElementById('tbRole').textContent     = 'Pending';
+    document.getElementById('sideNav').innerHTML      = '';
+
+    document.getElementById('tbTitle').textContent = 'ACCOUNT PENDING';
+    document.getElementById('tbSub').textContent   = 'Awaiting admin approval';
+    document.getElementById('mainContent').innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:1rem">
+        <div style="font-size:3rem;opacity:.35">⏳</div>
+        <div style="font-family:var(--font-head);font-size:1.4rem;letter-spacing:2px;color:var(--white)">
+          ACCOUNT PENDING
+        </div>
+        <div style="font-size:.85rem;color:var(--dim);max-width:380px;line-height:1.7">
+          Your registration has been received. An administrator will review and approve your account shortly.
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.75rem;margin-top:.5rem;text-align:left;min-width:280px">
+          <div style="font-size:.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:.65rem">YOUR DETAILS</div>
+          <div style="font-size:.82rem;color:var(--soft);margin-bottom:.3rem">
+            <span style="color:var(--muted);font-size:.72rem">Name</span><br/>${u.name||'—'}
+          </div>
+          <div style="font-size:.82rem;color:var(--soft);margin-bottom:.3rem">
+            <span style="color:var(--muted);font-size:.72rem">Email</span><br/>${u.email||'—'}
+          </div>
+          <div style="font-size:.82rem;color:var(--soft)">
+            <span style="color:var(--muted);font-size:.72rem">Registered role</span><br/>
+            <span class="bdg bdg-amber" style="margin-top:.2rem;display:inline-block">${u.role||'player'}</span>
+          </div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted);max-width:340px;line-height:1.6;margin-top:.25rem">
+          You'll be able to sign in and access your portal once approved. Contact 
+          <a href="mailto:admin@krfkenya.co.ke" style="color:var(--gold);text-decoration:none">admin@krfkenya.co.ke</a> 
+          if you need urgent access.
+        </div>
+        <button class="btn-s" style="margin-top:.5rem" onclick="doLogout()">← Sign Out</button>
+      </div>`;
+    return; // stop here — don't load nav or data
+  }
+
+  // ── ACTIVE ACCOUNT — normal boot ─────────────────────
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('app').classList.add('show');
 
-  const u = STATE.user;
   const r = ROLE_CONFIG[u.role] || ROLE_CONFIG.player;
 
-  document.getElementById('sbAv').textContent       = u.initials || u.name.split(' ').map(n=>n[0]).join('');
+  document.getElementById('sbAv').textContent       = u.initials || (u.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
   document.getElementById('sbAv').style.background  = r.color + '18';
   document.getElementById('sbAv').style.color       = r.color;
   document.getElementById('sbAv').style.borderColor = r.color + '44';
-  document.getElementById('sbName').textContent     = u.name;
+  document.getElementById('sbName').textContent     = u.name || u.email;
   document.getElementById('sbRole').textContent     = r.label;
   document.getElementById('tbRole').textContent     = r.label;
   document.getElementById('app').style.setProperty('--role-color', r.color);
