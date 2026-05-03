@@ -70,11 +70,11 @@
     <div class="home-hero-content">
       <div style="font-family:var(--font-ui);font-size:.68rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:1rem">🇰🇪 Official Federation</div>
       <h1 class="hero-h1">KENYA<span class="line2">ROLLBALL</span><span class="line3">FEDERATION</span></h1>
-      <div class="hero-meta">
-        <div class="hero-stat"><span class="val" id="heroTeams">12</span><span class="lbl">Teams</span></div>
-        <div class="hero-stat"><span class="val" id="heroPlayers">186</span><span class="lbl">Players</span></div>
-        <div class="hero-stat"><span class="val" id="heroTours">4</span><span class="lbl">Tournaments</span></div>
-        <div class="hero-stat"><span class="val" id="heroMatches">58</span><span class="lbl">Matches</span></div>
+     <div class="hero-meta">
+        <div class="hero-stat"><span class="val" id="heroTeams">—</span><span class="lbl">Teams</span></div>
+        <div class="hero-stat"><span class="val" id="heroPlayers">—</span><span class="lbl">Players</span></div>
+        <div class="hero-stat"><span class="val" id="heroTours">—</span><span class="lbl">Tournaments</span></div>
+        <div class="hero-stat"><span class="val" id="heroMatches">—</span><span class="lbl">Matches</span></div>
       </div>
       <div class="hero-btns">
         <button class="btn-primary" onclick="showPage('fixtures')">View Fixtures</button>
@@ -157,10 +157,20 @@
 </div>
 
 <!-- ══════════════ FIXTURES ══════════════ -->
+<!-- ══════════════ FIXTURES ══════════════ -->
 <div id="fixtures" class="page">
+  <!-- PHOTO SLIDESHOW HEADER -->
+  <div class="fixtures-hero" id="fixturesHero">
+    <div class="fh-slides" id="fhSlides"></div>
+    <div class="fh-overlay"></div>
+    <div class="fh-dots" id="fhDots"></div>
+    <div class="fh-content">
+      <div style="font-size:.62rem;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem">Kenya Rollball Federation</div>
+      <h2 style="font-family:var(--font-display);font-size:2.5rem;letter-spacing:3px;margin:0">FIXTURES & <em style="color:var(--gold)">RESULTS</em></h2>
+    </div>
+  </div>
   <div class="container">
-    <div class="sec-head"><h2><small>All Matches</small>FIXTURES & <em>RESULTS</em></h2></div>
-    <div class="tabs">
+    <div class="tabs" style="margin-top:1.25rem">
       <button class="tab active" onclick="filterFixtures('all',this)">All Matches</button>
       <button class="tab" onclick="filterFixtures('live',this)">● Live</button>
       <button class="tab" onclick="filterFixtures('upcoming',this)">Upcoming</button>
@@ -201,15 +211,45 @@
 </div>
 
 <!-- ══════════════ GALLERY ══════════════ -->
+<!-- ══════════════ GALLERY ══════════════ -->
 <div id="gallery" class="page">
   <div class="container">
     <div class="sec-head"><h2><small>Match Day</small>PHOTO & VIDEO <em>GALLERY</em></h2></div>
     <div class="tabs">
       <button class="tab active" onclick="setGalleryTab('photos',this)">📷 Photos</button>
-      <button class="tab" onclick="setGalleryTab('videos',this)">🎬 Videos</button>
+      <button class="tab" onclick="setGalleryTab('highlights',this)">⚽ Match Highlights</button>
+      <button class="tab" onclick="setGalleryTab('goalrush',this)">🔥 Goal Rush</button>
+      <button class="tab" onclick="setGalleryTab('live',this)">📡 Live Stream</button>
     </div>
-    <div id="photosPanel"><div class="gallery-masonry" id="galleryGrid"></div></div>
-    <div id="videosPanel" style="display:none"><div class="video-grid" id="videoGrid"></div></div>
+    <!-- PHOTOS -->
+    <div id="photosPanel">
+      <div class="gallery-masonry" id="galleryGrid"></div>
+    </div>
+    <!-- MATCH HIGHLIGHTS -->
+    <div id="highlightsPanel" style="display:none">
+      <div class="video-grid" id="highlightsGrid"></div>
+    </div>
+    <!-- GOAL RUSH -->
+    <div id="goalrushPanel" style="display:none">
+      <div style="background:linear-gradient(135deg,rgba(200,16,46,.08),transparent);border:1px solid rgba(200,16,46,.2);border-radius:8px;padding:1.25rem;margin-bottom:1.25rem">
+        <div style="font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:.5rem">⚽ Goal Rush</div>
+        <div style="font-size:.82rem;color:var(--dim)">All goals from the current season — updated after every match.</div>
+      </div>
+      <div class="video-grid" id="goalrushGrid"></div>
+    </div>
+    <!-- LIVE STREAM -->
+    <div id="livePanel" style="display:none">
+      <div id="liveStreamWrap"></div>
+    </div>
+  </div>
+  <!-- LIGHTBOX -->
+  <div class="overlay-bg" id="photoLightbox" onclick="if(event.target===this)this.classList.remove('open')">
+    <div style="position:relative;max-width:90vw;max-height:90vh">
+      <button onclick="document.getElementById('photoLightbox').classList.remove('open')"
+        style="position:absolute;top:-2rem;right:0;background:none;border:none;color:var(--white);font-size:1.5rem;cursor:pointer;z-index:5">✕</button>
+      <img id="lightboxImg" style="max-width:90vw;max-height:85vh;object-fit:contain;border-radius:6px;display:block"/>
+      <div id="lightboxCaption" style="text-align:center;color:var(--dim);font-size:.78rem;margin-top:.5rem"></div>
+    </div>
   </div>
 </div>
 
