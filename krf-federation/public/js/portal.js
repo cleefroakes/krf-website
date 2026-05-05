@@ -730,6 +730,32 @@ async function loadPortalData() {
 // ─────────────────────────────────────────────────────────
 // TOAST
 // ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────
+// SITE SETTINGS
+// ─────────────────────────────────────────────────────────
+async function saveSettings() {
+  const heroType = document.getElementById('heroType')?.value;
+  const fields = [
+    ['hero_video_url',  heroType === 'video' ? (document.getElementById('heroUrl')?.value||'') : ''],
+    ['hero_image_url',  heroType === 'image' ? (document.getElementById('heroImageUrl')?.value||'') : ''],
+    ['ticker_message',  document.getElementById('tickerMsg')?.value],
+    ['season_label',    document.getElementById('seasonLabel')?.value],
+    ['facebook_url',    document.getElementById('fbUrl')?.value],
+    ['instagram_url',   document.getElementById('igUrl')?.value],
+    ['youtube_url',     document.getElementById('ytUrl')?.value],
+    ['twitter_url',     document.getElementById('twUrl')?.value],
+    ['tiktok_url',      document.getElementById('ttUrl')?.value],
+    ['live_stream_url', document.getElementById('liveStreamUrl')?.value],
+    ['live_rtmp_url',   document.getElementById('liveRtmpUrl')?.value],
+  ].filter(([, v]) => v !== null && v !== undefined);
+
+  showToast('Saving...');
+  for (const [key, value] of fields) {
+    await STATE.sb.from('site_settings').upsert({ key, value });
+    if (STATE.siteSettings) STATE.siteSettings[key] = value;
+  }
+  showToast('Settings saved! Refresh public site to see changes.');
+}
 function showToast(msg) {
   const t = document.getElementById('toast');
   if (!t) return;
